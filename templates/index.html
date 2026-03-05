@@ -1,0 +1,3898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Foresight Scanner</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --lockton-black: #000000;
+            --lockton-white: #ffffff;
+            --lockton-jet: #363636;
+            --lockton-silver: #888888;
+            --lockton-blue: #00aeef;
+            --lockton-blue-dark: #0d245c;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, var(--lockton-black) 0%, var(--lockton-jet) 55%, #141414 100%);
+            min-height: 100vh;
+            color: var(--lockton-white);
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: var(--lockton-blue);
+            margin-bottom: 10px;
+            text-shadow: 0 0 18px rgba(0, 174, 239, 0.35);
+        }
+
+        .subtitle {
+            color: var(--lockton-silver);
+            font-size: 1.1rem;
+        }
+
+        .search-box {
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .search-form {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 250px;
+            padding: 15px 20px;
+            font-size: 1rem;
+            border: 2px solid rgba(0, 174, 239, 0.4);
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--lockton-blue);
+            box-shadow: 0 0 20px rgba(0, 174, 239, 0.25);
+        }
+
+        .search-input::placeholder {
+            color: var(--lockton-silver);
+        }
+
+        .scan-button {
+            padding: 15px 40px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--lockton-black);
+            background: linear-gradient(135deg, var(--lockton-blue), #7bd2f7);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .scan-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 174, 239, 0.3);
+        }
+
+        .scan-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .examples {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: var(--lockton-silver);
+        }
+
+        .examples span {
+            color: var(--lockton-blue);
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .examples span:hover {
+            color: #7bd2f7;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(0, 174, 239, 0.2);
+            border-top-color: var(--lockton-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: var(--lockton-silver);
+            font-size: 1.1rem;
+        }
+
+        .results {
+            display: none;
+        }
+
+        .results.active {
+            display: block;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .results-title {
+            font-size: 1.5rem;
+            color: var(--lockton-blue);
+        }
+
+        .results-count {
+            background: rgba(0, 174, 239, 0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .radar-section {
+            margin: 30px 0 40px;
+            background: radial-gradient(ellipse at center, rgba(0, 40, 60, 0.4) 0%, rgba(0, 0, 0, 0.85) 70%);
+            border-radius: 16px;
+            padding: 25px;
+            border: 1px solid rgba(0, 174, 239, 0.2);
+            box-shadow: 0 0 40px rgba(0, 174, 239, 0.1), inset 0 0 60px rgba(0, 174, 239, 0.05);
+        }
+
+        .radar-summary {
+            margin-top: 16px;
+            padding: 16px;
+            border-radius: 12px;
+            background: rgba(54, 54, 54, 0.3);
+            color: var(--lockton-silver);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .radar-summary strong {
+            color: var(--lockton-white);
+        }
+
+        .radar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .radar-title {
+            font-size: 1.2rem;
+            color: var(--lockton-blue);
+        }
+
+        .radar-subtitle {
+            font-size: 0.85rem;
+            color: var(--lockton-silver);
+        }
+
+        .radar-wrapper {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 220px;
+            gap: 28px;
+            align-items: start;
+        }
+
+        .radar-canvas-container {
+            position: relative;
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .radar-canvas {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            overflow: hidden;
+            cursor: grab;
+        }
+
+        .radar-canvas.panning {
+            cursor: grabbing;
+        }
+
+        .radar-zoom-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            z-index: 10;
+        }
+
+        .radar-zoom-btn {
+            width: 32px;
+            height: 32px;
+            border: 1px solid rgba(0, 174, 239, 0.4);
+            background: rgba(0, 0, 0, 0.7);
+            color: var(--lockton-blue);
+            font-size: 1.1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .radar-zoom-btn:hover {
+            background: rgba(0, 174, 239, 0.2);
+        }
+
+        .radar-legend {
+            display: grid;
+            gap: 12px;
+            color: var(--lockton-silver);
+            font-size: 0.85rem;
+        }
+
+        .legend-group {
+            display: grid;
+            gap: 8px;
+        }
+
+        .legend-title {
+            font-weight: 600;
+            color: var(--lockton-white);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-swatch {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        /* Radar dot effects */
+        .radar-canvas svg circle.radar-dot {
+            transition: all 0.25s ease;
+            filter: drop-shadow(0 0 4px currentColor);
+        }
+
+        .radar-canvas svg circle.radar-dot:hover {
+            transform-origin: center;
+            filter: drop-shadow(0 0 12px currentColor) drop-shadow(0 0 20px currentColor);
+        }
+
+        .radar-canvas svg circle.radar-dot.selected {
+            stroke-width: 3;
+            stroke: white;
+            filter: drop-shadow(0 0 15px currentColor) drop-shadow(0 0 25px currentColor);
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 0.9;
+            }
+            50% {
+                opacity: 0.6;
+            }
+        }
+
+        .radar-canvas svg circle.radar-ring {
+            animation: ringPulse 4s ease-in-out infinite;
+        }
+
+        @keyframes ringPulse {
+            0%, 100% {
+                stroke-opacity: 0.4;
+            }
+            50% {
+                stroke-opacity: 0.6;
+            }
+        }
+
+        @media (max-width: 760px) {
+            .radar-wrapper {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .phenomenon-card {
+            background: rgba(0, 0, 0, 0.65);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .phenomenon-card:hover {
+            border-color: rgba(0, 174, 239, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .phenomenon-title {
+            font-size: 1.2rem;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+
+        .ref-id {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(0, 174, 239, 0.2);
+            border: 1px solid rgba(0, 174, 239, 0.5);
+            color: #00aeef;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-right: 8px;
+            flex-shrink: 0;
+        }
+
+        .phenomenon-tags {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .tag {
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            background: rgba(54, 54, 54, 0.6);
+            color: var(--lockton-white);
+        }
+
+        .tag.type {
+            background: rgba(0, 174, 239, 0.2);
+            color: var(--lockton-white);
+        }
+
+        .tag.horizon {
+            background: rgba(136, 136, 136, 0.3);
+            color: var(--lockton-white);
+        }
+
+        .phenomenon-summary {
+            color: #d6d6d6;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .phenomenon-section {
+            margin-top: 15px;
+        }
+
+        .phenomenon-section-title {
+            font-size: 0.85rem;
+            color: var(--lockton-silver);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .phenomenon-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .phenomenon-list li {
+            color: #d6d6d6;
+            padding: 4px 0;
+            padding-left: 15px;
+            position: relative;
+        }
+
+        .phenomenon-list li::before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: var(--lockton-blue);
+        }
+
+        .sources-section {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sources-title {
+            font-size: 1.2rem;
+            color: var(--lockton-silver);
+            margin-bottom: 15px;
+        }
+
+        .source-item {
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .source-item a {
+            color: var(--lockton-blue);
+            text-decoration: none;
+        }
+
+        .source-item a:hover {
+            text-decoration: underline;
+        }
+
+        .source-snippet {
+            font-size: 0.9rem;
+            color: var(--lockton-silver);
+            margin-top: 5px;
+        }
+
+        .error-message {
+            display: none;
+            background: rgba(255, 33, 71, 0.12);
+            border: 1px solid rgba(255, 33, 71, 0.4);
+            border-radius: 10px;
+            padding: 20px;
+            color: #ffb3c1;
+            margin-top: 20px;
+        }
+
+        .error-message.active {
+            display: block;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 60px;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--lockton-silver);
+            font-size: 0.9rem;
+        }
+
+        .scorecard {
+            position: fixed;
+            right: 30px;
+            top: 120px;
+            width: min(360px, 90vw);
+            max-height: calc(100vh - 140px);
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.92);
+            border: 1px solid rgba(0, 174, 239, 0.4);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            color: var(--lockton-white);
+            display: none;
+            z-index: 10;
+        }
+
+        .scorecard.active {
+            display: block;
+        }
+
+        .scorecard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .scorecard-title {
+            font-size: 1.1rem;
+            color: var(--lockton-blue);
+        }
+
+        .scorecard-close {
+            background: none;
+            border: none;
+            color: var(--lockton-white);
+            font-size: 1.1rem;
+            cursor: pointer;
+        }
+
+        .scorecard-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 12px 0 10px;
+        }
+
+        .scorecard-section {
+            margin-top: 12px;
+            color: #d6d6d6;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .scorecard-list {
+            margin-top: 6px;
+            padding-left: 18px;
+        }
+
+        .scorecard-list li {
+            margin-bottom: 4px;
+        }
+
+        .scorecard-link {
+            color: var(--lockton-blue);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .scorecard-link:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 960px) {
+            .scorecard {
+                position: static;
+                width: 100%;
+                margin-bottom: 20px;
+            }
+        }
+
+        /* Download Modal Styles */
+        .download-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
+            justify-content: center;
+            align-items: flex-start;
+            z-index: 100;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .download-modal-overlay.active {
+            display: flex;
+        }
+
+        .download-modal {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 900px;
+            margin: 20px auto;
+            border: 1px solid rgba(0, 174, 239, 0.3);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .download-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 25px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .download-modal-title {
+            font-size: 1.3rem;
+            color: var(--lockton-blue);
+        }
+
+        .download-modal-close {
+            background: none;
+            border: none;
+            color: var(--lockton-white);
+            font-size: 1.3rem;
+            cursor: pointer;
+            padding: 5px;
+            transition: color 0.2s;
+        }
+
+        .download-modal-close:hover {
+            color: var(--lockton-blue);
+        }
+
+        .download-modal-body {
+            padding: 25px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .edit-phenomenon {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .edit-phenomenon-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .edit-phenomenon-number {
+            background: var(--lockton-blue);
+            color: var(--lockton-black);
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+
+        .edit-field {
+            margin-bottom: 12px;
+        }
+
+        .edit-field label {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--lockton-silver);
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .edit-field input,
+        .edit-field textarea,
+        .edit-field select {
+            width: 100%;
+            padding: 10px 12px;
+            font-size: 0.95rem;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.5);
+            color: var(--lockton-white);
+            transition: border-color 0.2s;
+        }
+
+        .edit-field input:focus,
+        .edit-field textarea:focus,
+        .edit-field select:focus {
+            outline: none;
+            border-color: var(--lockton-blue);
+        }
+
+        .edit-field textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .edit-field select {
+            cursor: pointer;
+        }
+
+        .edit-field-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+        }
+
+        @media (max-width: 600px) {
+            .edit-field-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .edit-remove-btn {
+            background: rgba(244, 67, 54, 0.15);
+            color: #f44336;
+            border: 1px solid rgba(244, 67, 54, 0.3);
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: background 0.2s, border-color 0.2s;
+        }
+
+        .edit-remove-btn:hover {
+            background: rgba(244, 67, 54, 0.3);
+            border-color: rgba(244, 67, 54, 0.6);
+        }
+
+        .edit-add-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 14px;
+            background: rgba(0, 174, 239, 0.08);
+            border: 1px dashed rgba(0, 174, 239, 0.4);
+            border-radius: 12px;
+            color: var(--lockton-blue);
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s;
+            margin-bottom: 15px;
+        }
+
+        .edit-add-btn:hover {
+            background: rgba(0, 174, 239, 0.15);
+            border-color: rgba(0, 174, 239, 0.7);
+        }
+
+        .download-modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            padding: 20px 25px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .download-btn {
+            padding: 12px 28px;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .download-btn-primary {
+            background: linear-gradient(135deg, var(--lockton-blue), #7bd2f7);
+            color: var(--lockton-black);
+        }
+
+        .download-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 174, 239, 0.3);
+        }
+
+        .download-btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--lockton-white);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .download-btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .download-report-btn {
+            padding: 8px 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--lockton-white);
+            background: rgba(0, 174, 239, 0.2);
+            border: 1px solid rgba(0, 174, 239, 0.5);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .download-report-btn:hover {
+            background: rgba(0, 174, 239, 0.3);
+            transform: translateY(-1px);
+        }
+
+        /* Executive Summary */
+        .executive-summary {
+            background: linear-gradient(135deg, rgba(0,40,60,0.7) 0%, rgba(0,0,0,0.8) 100%);
+            border: 1px solid rgba(0, 174, 239, 0.35);
+            border-radius: 14px;
+            padding: 22px 28px;
+            margin-bottom: 28px;
+        }
+
+        .exec-summary-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--lockton-blue);
+            margin-bottom: 16px;
+        }
+
+        .exec-summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+        }
+
+        @media (max-width: 760px) {
+            .exec-summary-grid { grid-template-columns: 1fr; }
+        }
+
+        .exec-summary-item {
+            background: rgba(0,0,0,0.35);
+            border-radius: 10px;
+            padding: 14px 16px;
+            border-left: 3px solid var(--lockton-blue);
+        }
+
+        .exec-summary-item.urgent { border-left-color: #F44336; }
+        .exec-summary-item.wildcard { border-left-color: #9E9E9E; }
+
+        .exec-summary-item-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--lockton-silver);
+            margin-bottom: 6px;
+        }
+
+        .exec-summary-item p {
+            color: #e0e0e0;
+            font-size: 0.92rem;
+            line-height: 1.55;
+        }
+
+        /* Source confidence badge */
+        .confidence-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .confidence-high {
+            background: rgba(76, 175, 80, 0.18);
+            color: #81c784;
+            border: 1px solid rgba(76, 175, 80, 0.4);
+        }
+
+        .confidence-medium {
+            background: rgba(255, 193, 7, 0.15);
+            color: #ffd54f;
+            border: 1px solid rgba(255, 193, 7, 0.35);
+        }
+
+        .confidence-low {
+            background: rgba(136, 136, 136, 0.18);
+            color: #aaaaaa;
+            border: 1px solid rgba(136, 136, 136, 0.35);
+        }
+
+        /* Scan history */
+        .scan-history {
+            display: none;
+            margin-bottom: 24px;
+        }
+
+        .scan-history.visible { display: block; }
+
+        .scan-history-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--lockton-silver);
+            margin-bottom: 10px;
+        }
+
+        .scan-history-list {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .scan-history-chip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 14px;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(0, 174, 239, 0.25);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: var(--lockton-silver);
+            cursor: pointer;
+            transition: all 0.2s;
+            max-width: 220px;
+        }
+
+        .scan-history-chip:hover {
+            border-color: rgba(0, 174, 239, 0.6);
+            color: var(--lockton-white);
+            background: rgba(0, 174, 239, 0.1);
+        }
+
+        .scan-history-chip-topic {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .scan-history-chip-time {
+            font-size: 0.72rem;
+            color: rgba(136,136,136,0.7);
+            flex-shrink: 0;
+        }
+
+        /* Export dropdown */
+        .export-menu {
+            position: relative;
+            display: inline-block;
+        }
+
+        .export-dropdown {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: calc(100% + 6px);
+            background: rgba(20,20,20,0.97);
+            border: 1px solid rgba(0, 174, 239, 0.35);
+            border-radius: 10px;
+            min-width: 170px;
+            z-index: 50;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        }
+
+        .export-menu.open .export-dropdown { display: block; }
+
+        .export-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 11px 16px;
+            background: none;
+            border: none;
+            color: var(--lockton-white);
+            font-size: 0.88rem;
+            cursor: pointer;
+            transition: background 0.15s;
+            text-align: left;
+        }
+
+        .export-option:hover { background: rgba(0,174,239,0.15); }
+
+        .export-option-icon {
+            font-size: 0.9rem;
+            width: 18px;
+            text-align: center;
+            color: var(--lockton-blue);
+        }
+
+        .export-option + .export-option {
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+
+        /* ============================================================
+           View Tabs
+           ============================================================ */
+
+        .view-tabs {
+            display: flex;
+            margin-bottom: 28px;
+            border-bottom: 2px solid rgba(0, 174, 239, 0.18);
+        }
+
+        .view-tab {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 11px 26px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--lockton-silver);
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            cursor: pointer;
+            transition: color 0.2s, border-color 0.2s;
+            white-space: nowrap;
+        }
+
+        .view-tab:hover { color: var(--lockton-white); }
+
+        .view-tab.active {
+            color: var(--lockton-blue);
+            border-bottom-color: var(--lockton-blue);
+        }
+
+        .view-tab-icon { font-size: 1.05rem; }
+
+        /* ============================================================
+           Global Intelligence Dashboard
+           ============================================================ */
+
+        .intel-dashboard {
+            margin-bottom: 36px;
+        }
+
+        .intel-dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .intel-dashboard-title {
+            font-size: 1.3rem;
+            color: var(--lockton-blue);
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .intel-controls {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .intel-refresh-btn {
+            padding: 7px 16px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--lockton-blue);
+            background: rgba(0, 174, 239, 0.1);
+            border: 1px solid rgba(0, 174, 239, 0.4);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .intel-refresh-btn:hover { background: rgba(0, 174, 239, 0.2); }
+        .intel-refresh-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .intel-timestamp {
+            font-size: 0.76rem;
+            color: var(--lockton-silver);
+        }
+
+        /* Map */
+        .intel-map-wrapper {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(0, 174, 239, 0.2);
+            margin-bottom: 14px;
+            height: 360px;
+        }
+
+        #worldMap {
+            height: 100%;
+            width: 100%;
+            background: #08080f;
+        }
+
+        .map-overlay-label {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            z-index: 500;
+            background: rgba(0, 0, 0, 0.75);
+            border: 1px solid rgba(0, 174, 239, 0.3);
+            border-radius: 6px;
+            padding: 5px 10px;
+            font-size: 0.72rem;
+            color: var(--lockton-silver);
+            pointer-events: none;
+        }
+
+        /* Three panels row */
+        .intel-panels-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+
+        @media (max-width: 900px) {
+            .intel-panels-row { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 580px) {
+            .intel-panels-row { grid-template-columns: 1fr; }
+        }
+
+        .intel-panel {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .intel-panel-header {
+            display: flex;
+            align-items: center;
+            padding: 10px 14px;
+            background: rgba(0, 174, 239, 0.07);
+            border-bottom: 1px solid rgba(0, 174, 239, 0.14);
+        }
+
+        .intel-panel-title {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--lockton-blue);
+        }
+
+        .intel-panel-content {
+            padding: 14px;
+            flex: 1;
+            min-height: 160px;
+            overflow-y: auto;
+        }
+
+        .intel-loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100px;
+            color: var(--lockton-silver);
+            font-size: 0.82rem;
+            gap: 10px;
+        }
+
+        .intel-spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(0, 174, 239, 0.2);
+            border-top-color: var(--lockton-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            flex-shrink: 0;
+        }
+
+        .intel-error {
+            color: #ff6b6b;
+            font-size: 0.82rem;
+            padding: 8px 0;
+            line-height: 1.5;
+        }
+
+        /* World Brief */
+        .world-brief-text {
+            font-size: 0.88rem;
+            color: #d6d6d6;
+            line-height: 1.65;
+        }
+
+        /* Strategic Posture */
+        .posture-overall {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .posture-NORMAL   { background: rgba(76,175,80,0.2);  color: #81c784; border: 1px solid rgba(76,175,80,0.4); }
+        .posture-ELEVATED { background: rgba(255,193,7,0.2);  color: #ffd54f; border: 1px solid rgba(255,193,7,0.4); }
+        .posture-HEIGHTENED { background: rgba(255,152,0,0.2); color: #ffb74d; border: 1px solid rgba(255,152,0,0.4); }
+        .posture-CRITICAL { background: rgba(244,67,54,0.2);  color: #e57373; border: 1px solid rgba(244,67,54,0.4); }
+
+        .posture-summary {
+            font-size: 0.82rem;
+            color: #c0c0c0;
+            line-height: 1.55;
+            margin-bottom: 12px;
+        }
+
+        .theater-list { display: flex; flex-direction: column; gap: 6px; }
+
+        .theater-row {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            font-size: 0.8rem;
+        }
+
+        .theater-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .theater-region {
+            color: var(--lockton-white);
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .theater-status {
+            padding: 1px 7px;
+            border-radius: 8px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .status-NORMAL    { background: rgba(76,175,80,0.2);  color: #81c784; }
+        .status-ELEVATED  { background: rgba(255,193,7,0.2);  color: #ffd54f; }
+        .status-HEIGHTENED{ background: rgba(255,152,0,0.2);  color: #ffb74d; }
+        .status-CRITICAL  { background: rgba(244,67,54,0.2);  color: #e57373; }
+
+        .theater-note { color: var(--lockton-silver); font-size: 0.78rem; line-height: 1.4; }
+
+        /* Risk Gauge */
+        .risk-gauge-container {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 10px;
+        }
+
+        .risk-gauge { flex-shrink: 0; }
+
+        .risk-score-info { flex: 1; }
+
+        .risk-score-value {
+            font-size: 1.9rem;
+            font-weight: 700;
+            color: var(--lockton-white);
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+
+        .risk-trend { font-size: 0.78rem; font-weight: 600; }
+        .risk-trend-ESCALATING    { color: #e57373; }
+        .risk-trend-STABLE        { color: #ffd54f; }
+        .risk-trend-DE-ESCALATING { color: #81c784; }
+
+        .risk-summary {
+            font-size: 0.8rem;
+            color: #c0c0c0;
+            line-height: 1.5;
+            margin-bottom: 10px;
+        }
+
+        .risk-list { display: flex; flex-direction: column; gap: 5px; }
+
+        .risk-item {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            font-size: 0.8rem;
+        }
+
+        .risk-item-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .risk-severity {
+            padding: 1px 6px;
+            border-radius: 6px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .sev-HIGH   { background: rgba(244,67,54,0.2);  color: #e57373; }
+        .sev-MEDIUM { background: rgba(255,193,7,0.2);  color: #ffd54f; }
+        .sev-LOW    { background: rgba(76,175,80,0.2);  color: #81c784; }
+
+        .risk-item-title { font-weight: 600; color: var(--lockton-white); }
+        .risk-item-desc  { color: #d0d0d0; line-height: 1.4; font-size: 0.78rem; }
+
+        /* Regional Newsfeed */
+        .newsfeed-section {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 14px;
+        }
+
+        .newsfeed-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            background: rgba(0, 174, 239, 0.07);
+            border-bottom: 1px solid rgba(0, 174, 239, 0.14);
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .newsfeed-title {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--lockton-blue);
+        }
+
+        .region-select {
+            padding: 6px 12px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(0, 174, 239, 0.4);
+            border-radius: 8px;
+            color: var(--lockton-white);
+            font-size: 0.85rem;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .region-select:focus { border-color: var(--lockton-blue); }
+
+        .newsfeed-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 10px;
+            padding: 14px;
+        }
+
+        .news-card {
+            background: rgba(54, 54, 54, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 8px;
+            padding: 11px 13px;
+            transition: border-color 0.2s;
+        }
+
+        .news-card:hover { border-color: rgba(0, 174, 239, 0.3); }
+
+        .news-card-title a {
+            color: var(--lockton-white);
+            text-decoration: none;
+            font-size: 0.86rem;
+            font-weight: 600;
+            line-height: 1.4;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .news-card-title a:hover { color: var(--lockton-blue); }
+
+        .news-card-snippet {
+            font-size: 0.78rem;
+            color: var(--lockton-silver);
+            line-height: 1.5;
+        }
+
+        /* Hotspot markers */
+        .hotspot-pin {
+            position: relative;
+            width: 12px;
+            height: 12px;
+        }
+
+        .hotspot-pin-dot {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: #ff8c42;
+            border: 2px solid rgba(255, 255, 255, 0.75);
+            box-shadow: 0 0 6px rgba(255, 140, 66, 0.8);
+        }
+
+        .hotspot-pin-ring {
+            position: absolute;
+            inset: -6px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 140, 66, 0.6);
+            animation: hotspotPulse 2s ease-out infinite;
+        }
+
+        .hotspot-pin.critical .hotspot-pin-dot {
+            background: #e57373;
+            box-shadow: 0 0 8px rgba(229, 115, 115, 0.9);
+            border-color: rgba(255, 200, 200, 0.85);
+        }
+
+        .hotspot-pin.critical .hotspot-pin-ring {
+            border-color: rgba(229, 115, 115, 0.6);
+        }
+
+        @keyframes hotspotPulse {
+            0%   { transform: scale(1);   opacity: 0.75; }
+            70%  { transform: scale(2.4); opacity: 0;    }
+            100% { transform: scale(2.4); opacity: 0;    }
+        }
+
+        /* Hotspot popup (Leaflet popup dark-theme overrides) */
+        .hotspot-leaflet-popup .leaflet-popup-content-wrapper {
+            background: #1a1a2e;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
+            padding: 0;
+        }
+
+        .hotspot-leaflet-popup .leaflet-popup-content {
+            margin: 12px 14px;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .hotspot-leaflet-popup .leaflet-popup-tip {
+            background: #1a1a2e;
+        }
+
+        .hotspot-leaflet-popup .leaflet-popup-close-button {
+            color: #888888;
+            font-size: 16px;
+            top: 6px;
+            right: 8px;
+        }
+
+        .hotspot-leaflet-popup .leaflet-popup-close-button:hover {
+            color: #ffffff;
+        }
+
+        .hotspot-popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .hotspot-popup-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .hotspot-popup-risk {
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            flex-shrink: 0;
+        }
+
+        .hotspot-popup-body {
+            font-size: 0.78rem;
+            line-height: 1.45;
+            color: #888888;
+        }
+
+        .hotspot-popup-loading {
+            display: flex;
+            align-items: center;
+        }
+
+        /* Risk dial methodology note */
+        .risk-methodology {
+            font-size: 0.68rem;
+            color: #666666;
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+
+        .risk-band-normal     { color: #81c784; font-weight: 600; }
+        .risk-band-heightened { color: #ffb74d; font-weight: 600; }
+        .risk-band-elevated   { color: #ffd54f; font-weight: 600; }
+        .risk-band-critical   { color: #e57373; font-weight: 600; }
+
+        /* Region focus bar */
+        .region-focus-bar {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 14px;
+            background: rgba(0, 174, 239, 0.1);
+            border: 1px solid rgba(0, 174, 239, 0.35);
+            border-radius: 10px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+
+        .region-focus-bar.active {
+            display: flex;
+        }
+
+        .region-focus-label {
+            font-size: 0.78rem;
+            color: var(--lockton-silver);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .region-focus-name {
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: var(--lockton-blue);
+        }
+
+        .region-focus-loading {
+            font-size: 0.8rem;
+            color: var(--lockton-silver);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .global-view-btn {
+            margin-left: auto;
+            padding: 5px 14px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--lockton-white);
+            background: rgba(0, 174, 239, 0.15);
+            border: 1px solid rgba(0, 174, 239, 0.45);
+            border-radius: 7px;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .global-view-btn:hover {
+            background: rgba(0, 174, 239, 0.28);
+        }
+
+        /* Section divider */
+        .intel-section-divider {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin: 28px 0 24px;
+            color: var(--lockton-silver);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .intel-section-divider::before,
+        .intel-section-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Strategic Foresight Scanner</h1>
+            <p class="subtitle">Identify emerging trends, signals, and risk factors</p>
+        </header>
+
+        <!-- View switcher tabs -->
+        <div class="view-tabs" id="viewTabs">
+            <button class="view-tab active" id="tab-intelligence" data-view="intelligence" onclick="switchView('intelligence')">
+                <span class="view-tab-icon">&#127758;</span> Intelligence Dashboard
+            </button>
+            <button class="view-tab" id="tab-scanner" data-view="scanner" onclick="switchView('scanner')">
+                <span class="view-tab-icon">&#128269;</span> Foresight Scanner
+            </button>
+        </div>
+
+        <!-- ======================================================
+             Intelligence Dashboard view
+             ====================================================== -->
+        <div id="view-intelligence">
+        <div class="intel-dashboard" id="intelDashboard">
+
+            <div class="intel-dashboard-header">
+                <span class="intel-dashboard-title">Global Intelligence Dashboard</span>
+                <div class="intel-controls">
+                    <button class="intel-refresh-btn" id="intelRefreshBtn" onclick="refreshIntelligence()">&#8635; Refresh</button>
+                    <span class="intel-timestamp" id="intelTimestamp"></span>
+                </div>
+            </div>
+
+            <!-- World Map -->
+            <div class="intel-map-wrapper">
+                <div id="worldMap"></div>
+                <div class="map-overlay-label">Click a region marker to zoom in and view regional insights</div>
+            </div>
+
+            <!-- Region focus bar (shown when a region is selected) -->
+            <div class="region-focus-bar" id="regionFocusBar">
+                <span class="region-focus-label">Focused on</span>
+                <span class="region-focus-name" id="regionFocusName"></span>
+                <span class="region-focus-loading" id="regionFocusLoading" style="display:none;">
+                    <div class="intel-spinner"></div> Updating insights&hellip;
+                </span>
+                <button class="global-view-btn" onclick="returnToGlobalView()">&#8617; Return to Global View</button>
+            </div>
+
+            <!-- AI Insights | AI Strategic Posture | Strategic Risk Overview -->
+            <div class="intel-panels-row">
+
+                <div class="intel-panel">
+                    <div class="intel-panel-header">
+                        <span class="intel-panel-title">AI Insights</span>
+                    </div>
+                    <div class="intel-panel-content" id="insightsContent">
+                        <div class="intel-loading">
+                            <div class="intel-spinner"></div>
+                            Loading intelligence&hellip;
+                        </div>
+                    </div>
+                </div>
+
+                <div class="intel-panel">
+                    <div class="intel-panel-header">
+                        <span class="intel-panel-title">AI Strategic Posture</span>
+                    </div>
+                    <div class="intel-panel-content" id="postureContent">
+                        <div class="intel-loading">
+                            <div class="intel-spinner"></div>
+                            Analysing posture&hellip;
+                        </div>
+                    </div>
+                </div>
+
+                <div class="intel-panel">
+                    <div class="intel-panel-header">
+                        <span class="intel-panel-title">Strategic Risk Overview</span>
+                    </div>
+                    <div class="intel-panel-content" id="riskContent">
+                        <div class="intel-loading">
+                            <div class="intel-spinner"></div>
+                            Calculating risk&hellip;
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- /.intel-panels-row -->
+
+            <!-- Regional Newsfeed -->
+            <div class="newsfeed-section">
+                <div class="newsfeed-header">
+                    <span class="newsfeed-title">Regional Newsfeed</span>
+                    <select class="region-select" id="regionSelector" onchange="loadRegionalNews()">
+                        <option value="world">World News</option>
+                        <option value="us">United States</option>
+                        <option value="europe">Europe</option>
+                        <option value="middle-east">Middle East</option>
+                        <option value="africa">Africa</option>
+                        <option value="latin-america">Latin America</option>
+                        <option value="asia-pacific">Asia-Pacific</option>
+                    </select>
+                </div>
+                <div id="newsfeedContent">
+                    <div class="intel-loading" style="height:80px;">
+                        <div class="intel-spinner"></div>
+                        Loading news&hellip;
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /.intel-dashboard -->
+        </div><!-- /#view-intelligence -->
+
+        <!-- ======================================================
+             Foresight Scanner view (hidden by default)
+             ====================================================== -->
+        <div id="view-scanner" style="display:none;">
+        <div class="intel-section-divider"><span>Strategic Foresight Scanner</span></div>
+
+        <div class="search-box">
+            <form class="search-form" id="scanForm">
+                <input
+                    type="text"
+                    class="search-input"
+                    id="topicInput"
+                    placeholder="Enter a topic to analyze (e.g., artificial intelligence in healthcare)"
+                    maxlength="200"
+                    required
+                >
+                <button type="submit" class="scan-button" id="scanButton">
+                    Run Analysis
+                </button>
+            </form>
+            <div class="char-count" id="charCount" style="margin-top:8px;font-size:0.8rem;color:var(--lockton-silver);">0 / 200 characters</div>
+            <div class="attestation" style="margin-top:16px;">
+                <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:0.9rem;color:var(--lockton-silver);line-height:1.5;">
+                    <input type="checkbox" id="attestationCheckbox" style="margin-top:4px;width:18px;height:18px;flex-shrink:0;accent-color:var(--lockton-blue);cursor:pointer;">
+                    <span>I confirm that I am only entering publicly available information and no client, personal, confidential, or proprietary Lockton data.</span>
+                </label>
+            </div>
+            <div class="examples" style="margin-top:16px;">
+                Try:
+                <span onclick="setTopic('artificial intelligence in healthcare')">AI in healthcare</span> •
+                <span onclick="setTopic('quantum computing')">quantum computing</span> •
+                <span onclick="setTopic('supply chain resilience')">supply chain</span> •
+                <span onclick="setTopic('renewable energy')">renewable energy</span>
+            </div>
+        </div>
+
+        <!-- Recent scan history -->
+        <div class="scan-history" id="scanHistory">
+            <div class="scan-history-label">Recent Scans</div>
+            <div class="scan-history-list" id="scanHistoryList"></div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p class="loading-text">Analyzing sources... This may take 10-20 seconds.</p>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <div class="results" id="results">
+            <div class="results-header">
+                <h2 class="results-title" id="resultsTitle">Results</h2>
+                <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                    <span class="results-count" id="resultsCount">0 phenomena found</span>
+                    <button class="download-report-btn" id="editContentBtn" onclick="openEditModal()">Edit Content</button>
+                    <div class="export-menu" id="exportMenu">
+                        <button class="download-report-btn" onclick="toggleExportMenu()">Export &#9660;</button>
+                        <div class="export-dropdown" id="exportDropdown">
+                            <button class="export-option" onclick="exportPptx(); toggleExportMenu()">
+                                <span class="export-option-icon">P</span> PowerPoint
+                            </button>
+                            <button class="export-option" onclick="exportPdf(); toggleExportMenu()">
+                                <span class="export-option-icon">&#128196;</span> PDF
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Executive Summary -->
+            <div class="executive-summary" id="executiveSummary" style="display:none;">
+                <div class="exec-summary-label">Executive Brief</div>
+                <div class="exec-summary-grid">
+                    <div class="exec-summary-item">
+                        <div class="exec-summary-item-label">Dominant Theme</div>
+                        <p id="execThemeText"></p>
+                    </div>
+                    <div class="exec-summary-item urgent">
+                        <div class="exec-summary-item-label">Most Urgent Signal</div>
+                        <p id="execUrgentText"></p>
+                    </div>
+                    <div class="exec-summary-item wildcard">
+                        <div class="exec-summary-item-label">Biggest Wildcard</div>
+                        <p id="execWildcardText"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="scorecard" id="scorecard">
+                <div class="scorecard-header">
+                    <h3 class="scorecard-title" id="scorecardTitle">Select a signal</h3>
+                    <button class="scorecard-close" id="scorecardClose" aria-label="Close scorecard">✕</button>
+                </div>
+                <div class="scorecard-meta" id="scorecardMeta"></div>
+                <div class="scorecard-section" id="scorecardOverview"></div>
+                <div class="scorecard-section" id="scorecardDrivers"></div>
+                <div class="scorecard-section" id="scorecardImplications"></div>
+                <div class="scorecard-section" id="scorecardSources"></div>
+            </div>
+            <div class="radar-section">
+                <div class="radar-header">
+                    <div>
+                        <h3 class="radar-title">Strategic Radar Map</h3>
+                        <p class="radar-subtitle">Phenomena plotted by category (angle) and time horizon (distance).</p>
+                    </div>
+                </div>
+                <div class="radar-wrapper">
+                    <div class="radar-canvas-container">
+                        <div class="radar-zoom-controls">
+                            <button class="radar-zoom-btn" id="radarZoomIn" title="Zoom in">+</button>
+                            <button class="radar-zoom-btn" id="radarZoomOut" title="Zoom out">&minus;</button>
+                            <button class="radar-zoom-btn" id="radarZoomReset" title="Reset zoom" style="font-size:0.75rem;">&#8634;</button>
+                        </div>
+                        <div class="radar-canvas" id="radarCanvas"></div>
+                    </div>
+                    <div class="radar-legend" id="radarLegend"></div>
+                </div>
+                <div class="radar-summary" id="radarSummary"></div>
+            </div>
+            <div id="phenomenaList"></div>
+
+            <div class="sources-section" id="sourcesSection">
+                <h3 class="sources-title">Sources</h3>
+                <div id="sourcesList"></div>
+            </div>
+        </div>
+
+        <!-- Download/Edit Modal -->
+        <div class="download-modal-overlay" id="downloadModal">
+            <div class="download-modal">
+                <div class="download-modal-header">
+                    <h3 class="download-modal-title">Edit Content</h3>
+                    <button class="download-modal-close" onclick="closeEditModal()">✕</button>
+                </div>
+                <div class="download-modal-body" id="downloadModalBody">
+                    <!-- Phenomena edit forms will be populated here -->
+                </div>
+                <div class="download-modal-footer">
+                    <button class="download-btn download-btn-secondary" onclick="closeEditModal()">Cancel</button>
+                    <button class="download-btn download-btn-primary" onclick="applyEdits()">Save Changes</button>
+                </div>
+            </div>
+        </div>
+
+        </div><!-- /#view-scanner -->
+
+        <footer>
+            <p style="margin-bottom:12px;color:#aaa;font-size:0.85rem;line-height:1.6;">This report was generated using a Generative AI tool for internal exploratory analysis only.<br>
+            Outputs must be independently reviewed and validated before any external use.</p>
+            <p style="font-size:0.8rem;">Powered by Anthropic Claude (Sonnet) via Strategic Foresight Scanner, with public web sources.</p>
+            <p style="margin-top:8px;"><a href="/logout" style="color:var(--lockton-blue);text-decoration:none;font-size:0.85rem;">Sign Out</a></p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.7.1/dist/pptxgen.bundle.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script>
+        // ============================================================
+        // Global Intelligence Dashboard
+        // ============================================================
+
+        const DEFAULT_VIEW = 'intelligence';
+        const PANEL_IDS = ['insightsContent', 'postureContent', 'riskContent'];
+
+        let _worldMap = null;
+        const _regionMarkers = {};
+
+        // Theater region name -> dropdown region key
+        const THEATER_REGION_MAP = {
+            'North America': 'us',
+            'Europe':        'europe',
+            'Middle East':   'middle-east',
+            'Indo-Pacific':  'asia-pacific',
+            'Africa':        'africa',
+            'Latin America': 'latin-america',
+        };
+
+        // Dropdown region key -> map centre coords + display label
+        const REGION_MARKER_COORDS = {
+            'us':            { coords: [44, -100], label: 'North America' },
+            'europe':        { coords: [54,   15], label: 'Europe'        },
+            'middle-east':   { coords: [27,   45], label: 'Middle East'   },
+            'asia-pacific':  { coords: [20,  115], label: 'Indo-Pacific'  },
+            'africa':        { coords: [ 3,   22], label: 'Africa'        },
+            'latin-america': { coords: [-15, -60], label: 'Latin America' },
+        };
+
+        // Zoom settings per region when clicked: [lat, lng, zoomLevel]
+        const REGION_ZOOM_CONFIG = {
+            'us':            { center: [39, -98],   zoom: 4 },
+            'europe':        { center: [52, 15],    zoom: 4 },
+            'middle-east':   { center: [27, 43],    zoom: 5 },
+            'asia-pacific':  { center: [22, 108],   zoom: 4 },
+            'africa':        { center: [2,  20],    zoom: 4 },
+            'latin-america': { center: [-12, -58],  zoom: 4 },
+        };
+
+        // Global map defaults
+        const GLOBAL_MAP_CENTER = [20, 0];
+        const GLOBAL_MAP_ZOOM   = 2;
+
+        // Country-level hotspots shown when a region is zoomed in.
+        // Each entry: { coords, label, critical? }
+        // critical = true renders a red pulse (elevated threat)
+        const REGION_HOTSPOTS = {
+            'us': [
+                { coords: [38.9, -77.0],  label: 'Washington D.C.',  critical: false },
+                { coords: [45.4, -75.7],  label: 'Ottawa',           critical: false },
+                { coords: [19.4, -99.1],  label: 'Mexico City',      critical: false },
+                { coords: [25.1, -77.4],  label: 'Nassau (Caribbean Hub)', critical: false },
+                { coords: [18.5, -69.9],  label: 'Santo Domingo',    critical: false },
+            ],
+            'europe': [
+                { coords: [55.8,  37.6],  label: 'Moscow',           critical: true  },
+                { coords: [50.4,  30.5],  label: 'Kyiv',             critical: true  },
+                { coords: [52.5,  13.4],  label: 'Berlin',           critical: false },
+                { coords: [50.8,   4.4],  label: 'Brussels (NATO/EU)', critical: false },
+                { coords: [51.5,  -0.1],  label: 'London',           critical: false },
+                { coords: [48.8,   2.3],  label: 'Paris',            critical: false },
+                { coords: [41.9,  12.5],  label: 'Rome',             critical: false },
+                { coords: [59.3,  18.1],  label: 'Stockholm',        critical: false },
+                { coords: [52.2,  21.0],  label: 'Warsaw',           critical: false },
+            ],
+            'middle-east': [
+                { coords: [35.7,  51.4],  label: 'Tehran',           critical: true  },
+                { coords: [31.8,  35.2],  label: 'Jerusalem / Tel Aviv', critical: true },
+                { coords: [31.5,  34.5],  label: 'Gaza Strip',       critical: true  },
+                { coords: [24.7,  46.7],  label: 'Riyadh',           critical: false },
+                { coords: [33.3,  44.4],  label: 'Baghdad',          critical: false },
+                { coords: [33.9,  35.5],  label: 'Beirut',           critical: true  },
+                { coords: [33.5,  36.3],  label: 'Damascus',         critical: true  },
+                { coords: [15.4,  44.2],  label: "Sana'a (Yemen)",   critical: true  },
+                { coords: [25.3,  55.3],  label: 'Dubai (Gulf Hub)', critical: false },
+            ],
+            'africa': [
+                { coords: [30.0,  31.2],  label: 'Cairo',            critical: false },
+                { coords: [15.6,  32.5],  label: 'Khartoum',        critical: true  },
+                { coords: [ 9.0,  38.7],  label: 'Addis Ababa',     critical: false },
+                { coords: [-1.3,  36.8],  label: 'Nairobi',         critical: false },
+                { coords: [-4.3,  15.3],  label: 'Kinshasa (DRC)',   critical: true  },
+                { coords: [ 6.5,   3.4],  label: 'Lagos',            critical: false },
+                { coords: [12.4,  -1.5],  label: 'Ouagadougou (Sahel)', critical: true },
+                { coords: [13.5,   2.1],  label: 'Niamey (Sahel)',   critical: true  },
+                { coords: [-25.9, 32.6],  label: 'Maputo',           critical: false },
+            ],
+            'latin-america': [
+                { coords: [-15.8, -47.9], label: 'Brasília',         critical: false },
+                { coords: [  4.7, -74.1], label: 'Bogotá',           critical: false },
+                { coords: [ 10.5, -66.9], label: 'Caracas',          critical: true  },
+                { coords: [-34.6, -58.4], label: 'Buenos Aires',     critical: false },
+                { coords: [ 19.4, -99.1], label: 'Mexico City',      critical: false },
+                { coords: [ 23.1, -82.4], label: 'Havana',           critical: false },
+                { coords: [-33.5, -70.6], label: 'Santiago',         critical: false },
+                { coords: [-12.1, -77.0], label: 'Lima',             critical: false },
+            ],
+            'asia-pacific': [
+                { coords: [39.9, 116.4],  label: 'Beijing',          critical: false },
+                { coords: [35.7, 139.7],  label: 'Tokyo',            critical: false },
+                { coords: [28.6,  77.2],  label: 'New Delhi',        critical: false },
+                { coords: [37.6, 127.0],  label: 'Seoul',            critical: false },
+                { coords: [25.0, 121.5],  label: 'Taipei',           critical: true  },
+                { coords: [39.0, 125.8],  label: 'Pyongyang',        critical: true  },
+                { coords: [14.6, 121.0],  label: 'Manila',           critical: false },
+                { coords: [21.0, 105.8],  label: 'Hanoi',            critical: false },
+                { coords: [ 1.3, 103.8],  label: 'Singapore',        critical: false },
+                { coords: [33.9,  35.5],  label: 'Canberra',         critical: false },
+            ],
+        };
+
+        // Track active region and hotspot markers
+        let _activeRegion = null;
+        let _globalIntelCache = null;
+        const _hotspotMarkers = [];
+
+        // --- HTML helpers ---
+
+        function loadingHTML(height) {
+            const style = height ? ` style="height:${height}"` : '';
+            return `<div class="intel-loading"${style}><div class="intel-spinner"></div>Loading&hellip;</div>`;
+        }
+
+        function errorHTML(message, padding) {
+            const style = padding ? ` style="padding:${padding}"` : '';
+            return `<div class="intel-error"${style}>${message}</div>`;
+        }
+
+        // --- Map ---
+
+        function initWorldMap() {
+            if (_worldMap) return;
+
+            _worldMap = L.map('worldMap', {
+                center: [20, 0],
+                zoom: 2,
+                zoomControl: false,
+                attributionControl: true,
+                scrollWheelZoom: false,
+            });
+
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank">CARTO</a>',
+                subdomains: 'abcd',
+                maxZoom: 18,
+            }).addTo(_worldMap);
+
+            L.control.zoom({ position: 'bottomright' }).addTo(_worldMap);
+
+            Object.entries(REGION_MARKER_COORDS).forEach(([regionKey, { coords, label }]) => {
+                const marker = L.circleMarker(coords, {
+                    radius: 10,
+                    fillColor: '#00aeef',
+                    color: '#00aeef',
+                    weight: 2,
+                    opacity: 0.85,
+                    fillOpacity: 0.22,
+                }).addTo(_worldMap);
+
+                marker.bindTooltip(label, { permanent: false, direction: 'top' });
+
+                marker.on('click', () => {
+                    focusOnRegion(regionKey);
+                });
+
+                _regionMarkers[regionKey] = marker;
+            });
+        }
+
+        function _statusColor(status) {
+            return { NORMAL: '#81c784', ELEVATED: '#ffd54f', HEIGHTENED: '#ffb74d', CRITICAL: '#e57373' }[status] || '#00aeef';
+        }
+
+        function updateMapMarkers(theaters) {
+            if (!_worldMap || !theaters) return;
+            theaters.forEach(t => {
+                const marker = _regionMarkers[THEATER_REGION_MAP[t.region]];
+                if (!marker) return;
+                const color = _statusColor(t.status);
+                marker.setStyle({ fillColor: color, color: color });
+                marker.setTooltipContent(`${t.region}: ${t.status || 'NORMAL'}`);
+            });
+        }
+
+        // --- Hotspot markers ---
+
+        function showRegionHotspots(regionKey) {
+            clearHotspots();
+            const hotspots = REGION_HOTSPOTS[regionKey] || [];
+            hotspots.forEach(h => {
+                const icon = L.divIcon({
+                    className: '',
+                    html: `<div class="hotspot-pin${h.critical ? ' critical' : ''}"><div class="hotspot-pin-ring"></div><div class="hotspot-pin-dot"></div></div>`,
+                    iconSize:   [12, 12],
+                    iconAnchor: [ 6,  6],
+                });
+                const m = L.marker(h.coords, { icon, interactive: true, keyboard: false })
+                    .addTo(_worldMap)
+                    .bindTooltip(h.label, { permanent: false, direction: 'top', className: 'leaflet-tooltip' });
+                m.on('click', () => loadHotspotSummary(m, h));
+                _hotspotMarkers.push(m);
+            });
+        }
+
+        async function loadHotspotSummary(marker, h) {
+            const riskColor = h.critical ? '#e57373' : '#ff8c42';
+            const riskLabel = h.critical ? 'CRITICAL' : 'ELEVATED';
+            const popupLoading = `<div class="hotspot-popup">
+                <div class="hotspot-popup-header">
+                    <span class="hotspot-popup-label">${h.label}</span>
+                    <span class="hotspot-popup-risk" style="color:${riskColor}">${riskLabel}</span>
+                </div>
+                <div class="hotspot-popup-body hotspot-popup-loading">
+                    <div class="intel-spinner" style="width:12px;height:12px;border-width:2px;margin-right:6px;flex-shrink:0;"></div>
+                    Loading summary&hellip;
+                </div>
+            </div>`;
+
+            marker.unbindPopup();
+            marker.bindPopup(popupLoading, { maxWidth: 290, className: 'hotspot-leaflet-popup' }).openPopup();
+
+            try {
+                const resp = await fetch(
+                    `/api/hotspot-summary?location=${encodeURIComponent(h.label)}&critical=${h.critical}`,
+                    { headers: { 'Accept': 'application/json' } }
+                );
+                const data = await resp.json();
+                if (data.error) throw new Error(data.error);
+
+                const popup = marker.getPopup();
+                if (popup) {
+                    popup.setContent(`<div class="hotspot-popup">
+                        <div class="hotspot-popup-header">
+                            <span class="hotspot-popup-label">${h.label}</span>
+                            <span class="hotspot-popup-risk" style="color:${riskColor}">${riskLabel}</span>
+                        </div>
+                        <div class="hotspot-popup-body">${data.summary}</div>
+                    </div>`);
+                    popup.update();
+                }
+            } catch (err) {
+                const popup = marker.getPopup();
+                if (popup) {
+                    popup.setContent(`<div class="hotspot-popup">
+                        <div class="hotspot-popup-header">
+                            <span class="hotspot-popup-label">${h.label}</span>
+                            <span class="hotspot-popup-risk" style="color:${riskColor}">${riskLabel}</span>
+                        </div>
+                        <div class="hotspot-popup-body" style="color:#e57373;">Unable to load summary.</div>
+                    </div>`);
+                    popup.update();
+                }
+            }
+        }
+
+        function clearHotspots() {
+            _hotspotMarkers.forEach(m => m.remove());
+            _hotspotMarkers.length = 0;
+        }
+
+        // --- Region focus / zoom ---
+
+        function focusOnRegion(regionKey) {
+            const zoomCfg = REGION_ZOOM_CONFIG[regionKey];
+            if (_worldMap && zoomCfg) {
+                _worldMap.flyTo(zoomCfg.center, zoomCfg.zoom, { animate: true, duration: 1.2 });
+            }
+
+            // Highlight selected marker, dim others
+            Object.entries(_regionMarkers).forEach(([key, m]) => {
+                m.setStyle({ opacity: key === regionKey ? 1 : 0.35, fillOpacity: key === regionKey ? 0.55 : 0.12 });
+                m.setRadius(key === regionKey ? 14 : 10);
+            });
+
+            // Show country hotspot pins for this region
+            showRegionHotspots(regionKey);
+
+            _activeRegion = regionKey;
+            const label = REGION_MARKER_COORDS[regionKey]?.label || regionKey;
+
+            // Show focus bar
+            const bar = document.getElementById('regionFocusBar');
+            bar.classList.add('active');
+            document.getElementById('regionFocusName').textContent = label;
+
+            // Update news dropdown and load news
+            document.getElementById('regionSelector').value = regionKey;
+            loadRegionalNews();
+
+            // Load region-specific intelligence panels
+            loadRegionalIntelligence(regionKey, label);
+        }
+
+        function returnToGlobalView() {
+            _activeRegion = null;
+
+            // Reset map
+            if (_worldMap) {
+                _worldMap.flyTo(GLOBAL_MAP_CENTER, GLOBAL_MAP_ZOOM, { animate: true, duration: 1.2 });
+            }
+
+            // Reset marker styles and remove hotspot pins
+            Object.values(_regionMarkers).forEach(m => {
+                m.setStyle({ opacity: 0.85, fillOpacity: 0.22 });
+                m.setRadius(10);
+            });
+            clearHotspots();
+
+            // Hide focus bar
+            document.getElementById('regionFocusBar').classList.remove('active');
+
+            // Restore global intelligence (use cache if available)
+            if (_globalIntelCache) {
+                renderInsights(_globalIntelCache);
+                renderPosture(_globalIntelCache.strategic_posture);
+                renderRisk(_globalIntelCache.strategic_risk);
+            } else {
+                loadIntelligence();
+            }
+
+            // Reset news to world
+            document.getElementById('regionSelector').value = 'world';
+            loadRegionalNews();
+        }
+
+        async function loadRegionalIntelligence(regionKey, regionLabel) {
+            // Show loading state in panels
+            const loadingFocusHtml = `<div class="intel-loading"><div class="intel-spinner"></div>Loading ${regionLabel} intelligence&hellip;</div>`;
+            PANEL_IDS.forEach(id => { document.getElementById(id).innerHTML = loadingFocusHtml; });
+            document.getElementById('regionFocusLoading').style.display = 'flex';
+
+            try {
+                const resp = await fetch('/api/regional-intelligence?region=' + encodeURIComponent(regionKey), {
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (!resp.ok && resp.status === 401) throw new Error('Session expired. Please refresh the page.');
+                const data = await resp.json();
+                if (data.error) throw new Error(data.error);
+
+                const intel = data.intelligence;
+                renderInsights(intel);
+                renderPosture(intel.strategic_posture);
+                renderRisk(intel.strategic_risk);
+            } catch (err) {
+                PANEL_IDS.forEach(id => {
+                    document.getElementById(id).innerHTML = errorHTML('Unable to load regional intelligence: ' + err.message);
+                });
+            } finally {
+                document.getElementById('regionFocusLoading').style.display = 'none';
+            }
+        }
+
+        // --- Intelligence loading ---
+
+        async function loadIntelligence() {
+            const btn = document.getElementById('intelRefreshBtn');
+            if (btn) btn.disabled = true;
+
+            PANEL_IDS.forEach(id => { document.getElementById(id).innerHTML = loadingHTML(); });
+
+            try {
+                const resp = await fetch('/api/intelligence', {
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (!resp.ok && resp.status === 401) throw new Error('Session expired. Please refresh the page.');
+                const data = await resp.json();
+                if (data.error) throw new Error(data.error);
+
+                const intel = data.intelligence;
+                _globalIntelCache = intel;
+
+                // Only render global panels if not currently focused on a region
+                if (!_activeRegion) {
+                    renderInsights(intel);
+                    renderPosture(intel.strategic_posture);
+                    renderRisk(intel.strategic_risk);
+                }
+
+                if (intel.timestamp) {
+                    const d = new Date(intel.timestamp);
+                    document.getElementById('intelTimestamp').textContent =
+                        'Updated ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                }
+
+                if (intel.strategic_posture && intel.strategic_posture.theaters) {
+                    updateMapMarkers(intel.strategic_posture.theaters);
+                }
+            } catch (err) {
+                PANEL_IDS.forEach(id => {
+                    document.getElementById(id).innerHTML = errorHTML('Unable to load: ' + err.message);
+                });
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+        }
+
+        function refreshIntelligence() {
+            loadIntelligence();
+            if (_activeRegion) {
+                const label = REGION_MARKER_COORDS[_activeRegion]?.label || _activeRegion;
+                loadRegionalIntelligence(_activeRegion, label);
+            }
+            loadRegionalNews();
+        }
+
+        // --- View switcher ---
+
+        function switchView(view) {
+            const intelView   = document.getElementById('view-intelligence');
+            const scannerView = document.getElementById('view-scanner');
+
+            if (view === 'intelligence') {
+                intelView.style.display   = '';
+                scannerView.style.display = 'none';
+                if (_worldMap) setTimeout(() => _worldMap.invalidateSize(), 60);
+            } else {
+                intelView.style.display   = 'none';
+                scannerView.style.display = '';
+            }
+
+            document.querySelectorAll('.view-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.view === view);
+            });
+
+            try { sessionStorage.setItem('foresightActiveView', view); } catch (e) {}
+        }
+
+        // --- Panel renderers ---
+
+        function renderInsights(intel) {
+            document.getElementById('insightsContent').innerHTML =
+                `<div class="world-brief-text">${intel.world_brief || 'No brief available.'}</div>`;
+        }
+
+        function renderPosture(posture) {
+            if (!posture) {
+                document.getElementById('postureContent').innerHTML = errorHTML('No posture data available.');
+                return;
+            }
+            const overall = posture.overall || 'NORMAL';
+            const theatersHtml = (posture.theaters || []).map(t =>
+                `<div class="theater-row">
+                    <div class="theater-header">
+                        <span class="theater-region">${t.region}</span>
+                        <span class="theater-status status-${t.status || 'NORMAL'}">${t.status || 'NORMAL'}</span>
+                    </div>
+                    ${t.note ? `<div class="theater-note">${t.note}</div>` : ''}
+                </div>`
+            ).join('');
+
+            document.getElementById('postureContent').innerHTML =
+                `<div class="posture-overall posture-${overall}">&#9679; ${overall}</div>
+                 <div class="posture-summary">${posture.summary || ''}</div>
+                 <div class="theater-list">${theatersHtml}</div>`;
+        }
+
+        function renderRisk(risk) {
+            if (!risk) {
+                document.getElementById('riskContent').innerHTML = errorHTML('No risk data available.');
+                return;
+            }
+            const score = Math.max(0, Math.min(100, risk.score || 0));
+            const trend  = risk.trend || 'STABLE';
+            const trendIcon = { ESCALATING: '&#8593;', STABLE: '&#8594;', 'DE-ESCALATING': '&#8595;' }[trend] || '&#8594;';
+            const gaugeColor = _statusColor(score >= 75 ? 'CRITICAL' : score >= 50 ? 'ELEVATED' : score >= 25 ? 'HEIGHTENED' : 'NORMAL');
+
+            const risksHtml = (risk.top_risks || []).map(r =>
+                `<div class="risk-item">
+                    <div class="risk-item-header">
+                        <span class="risk-severity sev-${r.severity || 'MEDIUM'}">${r.severity || 'MEDIUM'}</span>
+                        <span class="risk-item-title">${r.title}</span>
+                    </div>
+                    ${r.description ? `<div class="risk-item-desc">${r.description}</div>` : ''}
+                </div>`
+            ).join('');
+
+            document.getElementById('riskContent').innerHTML =
+                `<div class="risk-gauge-container">
+                    ${buildGaugeSvg(score, gaugeColor)}
+                    <div class="risk-score-info">
+                        <div class="risk-score-value" style="color:${gaugeColor}">${score}</div>
+                        <div class="risk-trend risk-trend-${trend}">${trendIcon} ${trend.replace('-', '\u2011')}</div>
+                    </div>
+                </div>
+                <div class="risk-methodology">Score 0&ndash;100 derived from AI analysis of current news across conflict intensity, diplomatic tensions, economic instability, and humanitarian conditions. <span class="risk-band-normal">0&ndash;24 Normal</span> &middot; <span class="risk-band-heightened">25&ndash;49 Heightened</span> &middot; <span class="risk-band-elevated">50&ndash;74 Elevated</span> &middot; <span class="risk-band-critical">75&ndash;100 Critical</span></div>
+                <div class="risk-summary">${risk.summary || ''}</div>
+                <div class="risk-list">${risksHtml}</div>`;
+        }
+
+        function buildGaugeSvg(score, color) {
+            // Semicircle arc: 0% = left (180°), 100% = right (0°), radius 34, centre (42,40)
+            // cy - r*sin maps math angles correctly so the arc opens upward in SVG coords
+            const r = 34, cx = 42, cy = 40;
+            function pt(deg) {
+                const rad = (deg * Math.PI) / 180;
+                return [cx + r * Math.cos(rad), cy - r * Math.sin(rad)];
+            }
+            const [lx, ly] = pt(180); // left end (score 0)
+            const [rx, ry] = pt(0);   // right end (score 100)
+            const bgPath = `M ${lx} ${ly} A ${r} ${r} 0 0 1 ${rx} ${ry}`;
+
+            const fgAngle = 180 - (score / 100) * 180;
+            const [fx, fy] = pt(fgAngle);
+            // Always small-arc (0) — the filled portion never exceeds 180° on a semicircle gauge
+            const fgPath = score > 0
+                ? `M ${lx} ${ly} A ${r} ${r} 0 0 1 ${fx} ${fy}`
+                : '';
+
+            return `<svg class="risk-gauge" width="84" height="46" viewBox="0 0 84 46">
+                <path d="${bgPath}" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="7" stroke-linecap="round"/>
+                ${fgPath ? `<path d="${fgPath}" fill="none" stroke="${color}" stroke-width="7" stroke-linecap="round"/>` : ''}
+            </svg>`;
+        }
+
+        // --- News feed ---
+
+        async function loadRegionalNews() {
+            const region = document.getElementById('regionSelector').value;
+            document.getElementById('newsfeedContent').innerHTML = loadingHTML('80px');
+
+            Object.entries(_regionMarkers).forEach(([key, m]) => m.setRadius(key === region ? 14 : 10));
+
+            try {
+                const resp = await fetch('/api/regional-news?region=' + encodeURIComponent(region), {
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (!resp.ok && resp.status === 401) throw new Error('Session expired. Please refresh the page.');
+                const data = await resp.json();
+                if (data.error) throw new Error(data.error);
+                renderNews(data.articles || []);
+            } catch (err) {
+                document.getElementById('newsfeedContent').innerHTML = errorHTML('Unable to load news: ' + err.message, '16px');
+            }
+        }
+
+        function renderNews(articles) {
+            if (!articles.length) {
+                document.getElementById('newsfeedContent').innerHTML =
+                    '<div style="padding:16px;color:var(--lockton-silver);font-size:0.85rem;">No news found for this region.</div>';
+                return;
+            }
+            const cards = articles.map(a =>
+                `<div class="news-card">
+                    <div class="news-card-title">
+                        <a href="${a.link}" target="_blank" rel="noopener noreferrer">${a.title}</a>
+                    </div>
+                    ${a.snippet ? `<div class="news-card-snippet">${a.snippet}</div>` : ''}
+                </div>`
+            ).join('');
+            document.getElementById('newsfeedContent').innerHTML = `<div class="newsfeed-grid">${cards}</div>`;
+        }
+
+        // --- Init ---
+
+        document.addEventListener('DOMContentLoaded', function () {
+            let savedView = DEFAULT_VIEW;
+            try { savedView = sessionStorage.getItem('foresightActiveView') || DEFAULT_VIEW; } catch (e) {}
+            switchView(savedView);
+
+            initWorldMap();
+            loadIntelligence();
+            loadRegionalNews();
+        });
+
+        // ============================================================
+        // Foresight Scanner (existing code below)
+        // ============================================================
+
+        function linkifyAdditionalInfo(text) {
+            // Convert URLs in additional information text into hyperlinks
+            // Handles patterns like "Title (https://example.com): description"
+            // and standalone URLs
+            return text.replace(/\(?(https?:\/\/[^\s\)<>]+)\)?/g, function(match, url) {
+                if (match.startsWith('(') && match.endsWith(')')) {
+                    return '(<a href="' + url + '" target="_blank" style="color:var(--lockton-blue);text-decoration:none;">' + url + '</a>)';
+                }
+                return '<a href="' + url + '" target="_blank" style="color:var(--lockton-blue);text-decoration:none;">' + url + '</a>';
+            });
+        }
+
+        function setTopic(topic) {
+            document.getElementById('topicInput').value = topic;
+            updateCharCount();
+        }
+
+        // Character counter
+        const topicInput = document.getElementById('topicInput');
+        function updateCharCount() {
+            const count = topicInput.value.length;
+            document.getElementById('charCount').textContent = count + ' / 200 characters';
+            document.getElementById('charCount').style.color = count > 180 ? '#ff2147' : 'var(--lockton-silver)';
+        }
+        topicInput.addEventListener('input', updateCharCount);
+
+        document.getElementById('scanForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const topic = document.getElementById('topicInput').value.trim();
+            if (!topic) return;
+
+            // Attestation gate
+            const attestationBox = document.getElementById('attestationCheckbox');
+            if (!attestationBox.checked) {
+                document.getElementById('errorMessage').textContent = 'You must confirm the public-data attestation checkbox before running an analysis.';
+                document.getElementById('errorMessage').classList.add('active');
+                return;
+            }
+
+            document.getElementById('loading').classList.add('active');
+            document.getElementById('results').classList.remove('active');
+            document.getElementById('errorMessage').classList.remove('active');
+            document.getElementById('scanButton').disabled = true;
+
+            try {
+                const formData = new FormData();
+                formData.append('topic', topic);
+                formData.append('attestation', 'confirmed');
+
+                const response = await fetch('/scan', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const contentType = response.headers.get('content-type') || '';
+                if (!contentType.includes('application/json')) {
+                    if (response.status === 401 || response.redirected) {
+                        throw new Error('Session expired. Please refresh the page and log in again.');
+                    }
+                    throw new Error('Unexpected server response. Please try again.');
+                }
+
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                displayResults(topic, data);
+            } catch (error) {
+                document.getElementById('errorMessage').textContent = 'Error: ' + error.message;
+                document.getElementById('errorMessage').classList.add('active');
+            } finally {
+                document.getElementById('loading').classList.remove('active');
+                document.getElementById('scanButton').disabled = false;
+            }
+        });
+
+        function displayResults(topic, data) {
+            const sourcesCount = data.sources ? data.sources.length : 0;
+            document.getElementById('resultsTitle').textContent = `Results for "${topic}"`;
+            document.getElementById('resultsCount').textContent = `${data.phenomena_count} phenomena found • ${sourcesCount} sources`;
+            document.getElementById('scorecard').classList.remove('active');
+            window.latestScanData = data;
+            window.latestScanTopic = topic;
+
+            // Executive summary
+            const execSection = document.getElementById('executiveSummary');
+            if (data.executive_summary && (data.executive_summary.dominant_theme || data.executive_summary.most_urgent || data.executive_summary.biggest_wildcard)) {
+                document.getElementById('execThemeText').textContent = data.executive_summary.dominant_theme || '';
+                document.getElementById('execUrgentText').textContent = data.executive_summary.most_urgent || '';
+                document.getElementById('execWildcardText').textContent = data.executive_summary.biggest_wildcard || '';
+                execSection.style.display = '';
+            } else {
+                execSection.style.display = 'none';
+            }
+
+            // Persist to sessionStorage
+            saveToHistory(topic, data);
+
+            renderRadarMap(data);
+
+            const list = document.getElementById('phenomenaList');
+            list.innerHTML = '';
+
+            if (data.phenomena && data.phenomena.length > 0) {
+                data.phenomena.forEach((phenomenon, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'phenomenon-card';
+                    const category = (phenomenon.theme_tags && phenomenon.theme_tags.length > 0)
+                        ? phenomenon.theme_tags.find(t => ['Strategic', 'Regulatory', 'Operational', 'Financial'].includes(t)) || ''
+                        : '';
+                    const categoryHtml = category ? `<span class="tag">${category}</span>` : '';
+
+                    const backgroundHtml = phenomenon.background
+                        ? `<div class="phenomenon-section">
+                            <div class="phenomenon-section-title">Background</div>
+                            <p style="color:#d6d6d6;line-height:1.6;">${phenomenon.background}</p>
+                           </div>`
+                        : '';
+
+                    const impactHtml = phenomenon.impact
+                        ? `<div class="phenomenon-section">
+                            <div class="phenomenon-section-title">Impact</div>
+                            <p style="color:#d6d6d6;line-height:1.6;">${phenomenon.impact}</p>
+                           </div>`
+                        : '';
+
+                    const additionalInfoHtml = phenomenon.additional_information && phenomenon.additional_information.length > 0
+                        ? `<div class="phenomenon-section">
+                            <div class="phenomenon-section-title">Additional Information</div>
+                            <ul class="phenomenon-list">
+                                ${phenomenon.additional_information.map(i => `<li>${linkifyAdditionalInfo(i)}</li>`).join('')}
+                            </ul>
+                           </div>`
+                        : '';
+
+                    const refId = index + 1;
+                    const confidenceClass = {
+                        'High': 'confidence-high',
+                        'Medium': 'confidence-medium',
+                        'Low': 'confidence-low'
+                    }[phenomenon.source_confidence] || 'confidence-medium';
+                    const confidenceHtml = phenomenon.source_confidence
+                        ? `<span class="confidence-badge ${confidenceClass}">Source: ${phenomenon.source_confidence}</span>`
+                        : '';
+
+                    card.innerHTML = `
+                        <h3 class="phenomenon-title"><span class="ref-id">${refId}</span>${phenomenon.title || 'Untitled'}</h3>
+                        <div class="phenomenon-tags">
+                            ${phenomenon.type ? `<span class="tag type">${phenomenon.type}</span>` : ''}
+                            ${phenomenon.timing ? `<span class="tag horizon">${phenomenon.timing}</span>` : ''}
+                            ${categoryHtml}
+                            ${confidenceHtml}
+                        </div>
+                        <p class="phenomenon-summary">${phenomenon.summary || ''}</p>
+                        ${backgroundHtml}
+                        ${impactHtml}
+                        ${additionalInfoHtml}
+                    `;
+
+                    list.appendChild(card);
+                });
+            }
+
+            const sourcesList = document.getElementById('sourcesList');
+            sourcesList.innerHTML = '';
+
+            if (data.sources && data.sources.length > 0) {
+                data.sources.forEach(source => {
+                    const item = document.createElement('div');
+                    item.className = 'source-item';
+                    item.innerHTML = `
+                        <a href="${source.link}" target="_blank">${source.title}</a>
+                        <p class="source-snippet">${source.snippet}</p>
+                    `;
+                    sourcesList.appendChild(item);
+                });
+            }
+
+            document.getElementById('results').classList.add('active');
+        }
+
+        function getCategories(phenomena) {
+            // Fixed four categories for radar quadrants
+            return ['Strategic', 'Regulatory', 'Operational', 'Financial'];
+        }
+
+        function scoreSource(source) {
+            if (!source || !source.link) {
+                return 0;
+            }
+            const url = source.link.toLowerCase();
+            let score = 0;
+            if (url.startsWith('https://')) score += 2;
+            if (url.includes('.gov') || url.includes('.edu') || url.includes('.org')) score += 3;
+            // Top-tier sources per guidance: peer-reviewed journals and major credible outlets
+            const topTier = ['nature.com', 'science.org', 'reuters', 'bbc', 'cnn', 'ft.com', 'financialtimes', 'theguardian', 'who.int'];
+            if (topTier.some(s => url.includes(s))) score += 4;
+            // Credible popular scientific and technology publications
+            const midTier = ['wired', 'scientificamerican', 'bloomberg', 'weforum.org', 'oecd.org', 'popularmechanics', 'interestingengineering'];
+            if (midTier.some(s => url.includes(s))) score += 2;
+            if (source.title && source.title.length > 20) score += 1;
+            if (source.snippet && source.snippet.length > 80) score += 1;
+            if (url.includes('twitter') || url.includes('reddit') || url.includes('facebook')) score -= 2;
+            return score;
+        }
+
+        function getTopSources(sources, limit = 5) {
+            return [...sources]
+                .sort((a, b) => scoreSource(b) - scoreSource(a))
+                .slice(0, limit);
+        }
+
+        function openScorecard(item) {
+            const card = document.getElementById('scorecard');
+            const meta = document.getElementById('scorecardMeta');
+            const overview = document.getElementById('scorecardOverview');
+            const drivers = document.getElementById('scorecardDrivers');
+            const implications = document.getElementById('scorecardImplications');
+            const sources = document.getElementById('scorecardSources');
+
+            const refNum = item.index != null ? item.index + 1 : null;
+            document.getElementById('scorecardTitle').innerHTML = (refNum ? `<span class="ref-id">${refNum}</span>` : '') + (item.title || 'Signal details');
+            meta.innerHTML = '';
+
+            if (item.type) {
+                meta.innerHTML += `<span class="tag type">${item.type}</span>`;
+            }
+            if (item.timing) {
+                meta.innerHTML += `<span class="tag horizon">${item.timing}</span>`;
+            }
+            const categories = ['Strategic', 'Regulatory', 'Operational', 'Financial'];
+            const itemCategory = (item.theme_tags || []).find(t => categories.includes(t));
+            if (itemCategory) {
+                meta.innerHTML += `<span class="tag">${itemCategory}</span>`;
+            }
+
+            overview.innerHTML = `<strong>Summary:</strong> ${item.summary || 'No summary available yet.'}`;
+
+            if (item.background) {
+                drivers.innerHTML = `
+                    <strong>Background:</strong>
+                    <p style="margin-top:6px;">${item.background}</p>
+                `;
+            } else {
+                drivers.innerHTML = '';
+            }
+
+            if (item.impact) {
+                drivers.innerHTML += `
+                    <strong style="display:block;margin-top:12px;">Impact:</strong>
+                    <p style="margin-top:6px;">${item.impact}</p>
+                `;
+            }
+
+            if (item.additional_information && item.additional_information.length > 0) {
+                implications.innerHTML = `
+                    <strong>Additional Information:</strong>
+                    <ul class="scorecard-list">
+                        ${item.additional_information.map(info => `<li>${linkifyAdditionalInfo(info)}</li>`).join('')}
+                    </ul>
+                `;
+            } else {
+                implications.innerHTML = '';
+            }
+
+            const scanSources = (window.latestScanData && window.latestScanData.sources) ? window.latestScanData.sources : [];
+            const topSources = getTopSources(scanSources);
+            if (topSources.length > 0) {
+                sources.innerHTML = `<strong>Sources:</strong> ${topSources.map(source => (
+                    `<a class="scorecard-link" href="${source.link}" target="_blank">${source.title}</a>`
+                )).join(' • ')}`;
+            } else {
+                sources.innerHTML = '';
+            }
+
+            card.classList.add('active');
+        }
+
+        document.getElementById('scorecardClose').addEventListener('click', () => {
+            document.getElementById('scorecard').classList.remove('active');
+        });
+
+        function renderRadarMap(data) {
+            const container = document.getElementById('radarCanvas');
+            const legend = document.getElementById('radarLegend');
+            const summary = document.getElementById('radarSummary');
+            container.innerHTML = '';
+            legend.innerHTML = '';
+            summary.innerHTML = '';
+
+            const items = (data.phenomena || []).map((item, index) => ({
+                ...item,
+                kind: 'phenomenon',
+                index
+            }));
+
+            if (!items || items.length === 0) {
+                container.innerHTML = '<p style="color:#888888;text-align:center;">No signals to plot yet.</p>';
+                summary.textContent = 'No phenomena or sources to summarize yet.';
+                return;
+            }
+
+            const categories = getCategories(items);
+            const types = [
+                'Strengthening',
+                'Weakening',
+                'Established',
+                'Weak Signal',
+                'Wild Card'
+            ];
+            const typeColors = {
+                'Strengthening': '#4CAF50',
+                'Weakening': '#2196F3',
+                'Established': '#9C27B0',
+                'Weak Signal': '#9E9E9E',
+                'Wild Card': '#F44336'
+            };
+            const horizons = [
+                'Near-term (0-5 years)',
+                'Mid-term (5-10 years)',
+                'Long-term (10-20 years)'
+            ];
+            const horizonRadii = {
+                'Near-term (0-5 years)': 0.20,
+                'Mid-term (5-10 years)': 0.40,
+                'Long-term (10-20 years)': 0.72
+            };
+
+            const size = 800;
+            const padding = 50;
+            const center = size / 2 + padding;
+            const maxRadius = size * 0.42;
+
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('viewBox', `0 0 ${size + padding * 2} ${size + padding * 2}`);
+            svg.setAttribute('width', '100%');
+            svg.setAttribute('height', '100%');
+
+            const background = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            background.setAttribute('x', 0);
+            background.setAttribute('y', 0);
+            background.setAttribute('width', size + padding * 2);
+            background.setAttribute('height', size + padding * 2);
+            background.setAttribute('fill', 'transparent');
+            svg.appendChild(background);
+
+            // Add SVG defs for glow filters
+            const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+
+            // Create glow filters for each type color
+            Object.entries(typeColors).forEach(([type, color]) => {
+                const filter = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
+                const filterId = 'glow-' + type.replace(/\s+/g, '-').toLowerCase();
+                filter.setAttribute('id', filterId);
+                filter.setAttribute('x', '-50%');
+                filter.setAttribute('y', '-50%');
+                filter.setAttribute('width', '200%');
+                filter.setAttribute('height', '200%');
+
+                const feGaussianBlur = document.createElementNS('http://www.w3.org/2000/svg', 'feGaussianBlur');
+                feGaussianBlur.setAttribute('stdDeviation', '3');
+                feGaussianBlur.setAttribute('result', 'coloredBlur');
+                filter.appendChild(feGaussianBlur);
+
+                const feMerge = document.createElementNS('http://www.w3.org/2000/svg', 'feMerge');
+                const feMergeNode1 = document.createElementNS('http://www.w3.org/2000/svg', 'feMergeNode');
+                feMergeNode1.setAttribute('in', 'coloredBlur');
+                const feMergeNode2 = document.createElementNS('http://www.w3.org/2000/svg', 'feMergeNode');
+                feMergeNode2.setAttribute('in', 'SourceGraphic');
+                feMerge.appendChild(feMergeNode1);
+                feMerge.appendChild(feMergeNode2);
+                filter.appendChild(feMerge);
+
+                defs.appendChild(filter);
+            });
+            svg.appendChild(defs);
+
+            // Current year for time indicator
+            const currentYear = new Date().getFullYear();
+
+            // Year rings at 5-year intervals (0, 5, 10, 15, 20 years)
+            // Evenly spaced: from 0.08 (center) to 0.92 (outer), gap of 0.21 per 5 years
+            const yearIntervals = [
+                { years: 0, radius: 0.08, label: currentYear },
+                { years: 5, radius: 0.29, label: currentYear + 5 },
+                { years: 10, radius: 0.50, label: currentYear + 10 },
+                { years: 15, radius: 0.71, label: currentYear + 15 },
+                { years: 20, radius: 0.92, label: currentYear + 20 }
+            ];
+
+            // Time arrow pointing outward (bottom right diagonal)
+            const arrowAngle = Math.PI / 4; // 45 degrees (bottom-right)
+            const arrowStartRadius = maxRadius * 0.15;
+            const arrowEndRadius = maxRadius * 0.92;
+            const arrowX1 = center + Math.cos(arrowAngle) * arrowStartRadius;
+            const arrowY1 = center + Math.sin(arrowAngle) * arrowStartRadius;
+            const arrowX2 = center + Math.cos(arrowAngle) * arrowEndRadius;
+            const arrowY2 = center + Math.sin(arrowAngle) * arrowEndRadius;
+
+            // Arrow line
+            const arrowLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            arrowLine.setAttribute('x1', arrowX1);
+            arrowLine.setAttribute('y1', arrowY1);
+            arrowLine.setAttribute('x2', arrowX2);
+            arrowLine.setAttribute('y2', arrowY2);
+            arrowLine.setAttribute('stroke', 'rgba(255, 255, 255, 0.4)');
+            arrowLine.setAttribute('stroke-width', '2');
+            arrowLine.setAttribute('stroke-dasharray', '6 4');
+            svg.appendChild(arrowLine);
+
+            // Arrow head
+            const arrowHeadSize = 10;
+            const arrowHead = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            const tipX = arrowX2;
+            const tipY = arrowY2;
+            const baseAngle1 = arrowAngle + Math.PI * 0.85;
+            const baseAngle2 = arrowAngle - Math.PI * 0.85;
+            const base1X = tipX + Math.cos(baseAngle1) * arrowHeadSize;
+            const base1Y = tipY + Math.sin(baseAngle1) * arrowHeadSize;
+            const base2X = tipX + Math.cos(baseAngle2) * arrowHeadSize;
+            const base2Y = tipY + Math.sin(baseAngle2) * arrowHeadSize;
+            arrowHead.setAttribute('points', `${tipX},${tipY} ${base1X},${base1Y} ${base2X},${base2Y}`);
+            arrowHead.setAttribute('fill', 'rgba(255, 255, 255, 0.6)');
+            svg.appendChild(arrowHead);
+
+            // Draw year rings
+            yearIntervals.forEach((interval, index) => {
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', center);
+                circle.setAttribute('cy', center);
+                circle.setAttribute('r', maxRadius * interval.radius);
+                circle.setAttribute('fill', 'none');
+                circle.setAttribute('stroke', index === 0 ? 'rgba(0, 174, 239, 0.8)' : 'rgba(0, 174, 239, 0.5)');
+                circle.setAttribute('stroke-width', index === 0 ? '3' : '2');
+                circle.setAttribute('stroke-dasharray', index === 0 ? 'none' : '8 6');
+                circle.classList.add('radar-ring');
+                circle.style.animationDelay = `${index * 0.5}s`;
+                svg.appendChild(circle);
+
+                // Add year label along the arrow line (except center which gets special treatment)
+                if (index > 0) {
+                    const labelRadius = maxRadius * interval.radius;
+                    const labelX = center + Math.cos(arrowAngle) * labelRadius + 12;
+                    const labelY = center + Math.sin(arrowAngle) * labelRadius - 8;
+                    const yearLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    yearLabel.setAttribute('x', labelX);
+                    yearLabel.setAttribute('y', labelY);
+                    yearLabel.setAttribute('fill', 'rgba(255, 255, 255, 0.7)');
+                    yearLabel.setAttribute('font-size', '11');
+                    yearLabel.setAttribute('font-weight', '500');
+                    yearLabel.setAttribute('text-anchor', 'start');
+                    yearLabel.textContent = interval.label;
+                    svg.appendChild(yearLabel);
+                }
+            });
+
+            // Center current year label
+            const nowLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            nowLabel.setAttribute('x', center);
+            nowLabel.setAttribute('y', center + 4);
+            nowLabel.setAttribute('fill', '#00aeef');
+            nowLabel.setAttribute('font-size', '12');
+            nowLabel.setAttribute('font-weight', '700');
+            nowLabel.setAttribute('text-anchor', 'middle');
+            nowLabel.textContent = currentYear;
+            svg.appendChild(nowLabel);
+
+            categories.forEach((category, index) => {
+                const angle = (Math.PI * 2 * index) / categories.length - Math.PI / 2;
+                const x = center + Math.cos(angle) * maxRadius;
+                const y = center + Math.sin(angle) * maxRadius;
+                const axis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                axis.setAttribute('x1', center);
+                axis.setAttribute('y1', center);
+                axis.setAttribute('x2', x);
+                axis.setAttribute('y2', y);
+                axis.setAttribute('stroke', 'rgba(0, 174, 239, 0.25)');
+                axis.setAttribute('stroke-width', '1');
+                svg.appendChild(axis);
+
+                const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                label.setAttribute('x', center + Math.cos(angle) * (maxRadius + 22));
+                label.setAttribute('y', center + Math.sin(angle) * (maxRadius + 22));
+                label.setAttribute('fill', '#00aeef');
+                label.setAttribute('font-size', '12');
+                label.setAttribute('font-weight', '500');
+                label.setAttribute('text-anchor', 'middle');
+                label.setAttribute('dominant-baseline', 'middle');
+                label.textContent = category;
+                svg.appendChild(label);
+            });
+
+            // Store all dots for selection management
+            const allDots = [];
+
+            // Drag state management
+            let draggedDot = null;
+            let isDragging = false;
+            let dragStartPos = { x: 0, y: 0 };
+            let dragThreshold = 5; // pixels moved before considered a drag
+
+            // Get SVG coordinates from mouse event
+            function getSVGCoords(evt) {
+                const rect = svg.getBoundingClientRect();
+                const viewBox = svg.viewBox.baseVal;
+                const scaleX = viewBox.width / rect.width;
+                const scaleY = viewBox.height / rect.height;
+                return {
+                    x: viewBox.x + (evt.clientX - rect.left) * scaleX,
+                    y: viewBox.y + (evt.clientY - rect.top) * scaleY
+                };
+            }
+
+            // Calculate category from position (based on angle/quadrant)
+            function getCategoryFromPosition(x, y) {
+                const dx = x - center;
+                const dy = y - center;
+                let angle = Math.atan2(dy, dx);
+                // Adjust angle to match category layout (starts at top, -PI/2)
+                angle = angle + Math.PI / 2;
+                if (angle < 0) angle += Math.PI * 2;
+                // Each category spans PI/2 radians (90 degrees)
+                const categoryIndex = Math.floor((angle / (Math.PI * 2)) * categories.length) % categories.length;
+                return categories[categoryIndex];
+            }
+
+            // Calculate time horizon from position (based on distance from center)
+            function getTimeHorizonFromPosition(x, y) {
+                const dx = x - center;
+                const dy = y - center;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const normalizedRadius = distance / maxRadius;
+
+                // Determine time horizon based on radius thresholds (matching evenly-spaced rings)
+                // 5-year ring at 0.29, 10-year ring at 0.50
+                if (normalizedRadius <= 0.29) {
+                    return 'Near-term (0-5 years)';
+                } else if (normalizedRadius <= 0.50) {
+                    return 'Mid-term (5-10 years)';
+                } else {
+                    return 'Long-term (10-20 years)';
+                }
+            }
+
+            // Constrain position within radar bounds
+            function constrainToRadar(x, y) {
+                const dx = x - center;
+                const dy = y - center;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const minRadius = maxRadius * 0.12;
+                const maxAllowedRadius = maxRadius * 0.92;
+
+                if (distance < minRadius) {
+                    const angle = Math.atan2(dy, dx);
+                    return {
+                        x: center + Math.cos(angle) * minRadius,
+                        y: center + Math.sin(angle) * minRadius
+                    };
+                } else if (distance > maxAllowedRadius) {
+                    const angle = Math.atan2(dy, dx);
+                    return {
+                        x: center + Math.cos(angle) * maxAllowedRadius,
+                        y: center + Math.sin(angle) * maxAllowedRadius
+                    };
+                }
+                return { x, y };
+            }
+
+            items.forEach((item, index) => {
+                // Map item to radar quadrant using first matching theme tag
+                const itemTags = item.theme_tags || [];
+                const matchedTag = itemTags.find(t => categories.includes(t)) || categories[0];
+                const categoryIndex = categories.indexOf(matchedTag);
+                const angleOffset = (index + 1) / (items.length + 2);
+                const angle = (Math.PI * 2 * categoryIndex) / categories.length - Math.PI / 2 + angleOffset * 0.6 - 0.3;
+                const radiusScale = horizonRadii[item.timing] || 0.5;
+                const jitter = (index % 5) * 0.04;
+                const radius = maxRadius * (radiusScale + jitter);
+                const x = center + Math.cos(angle) * radius;
+                const y = center + Math.sin(angle) * radius;
+
+                const color = typeColors[item.type] || '#00aeef';
+                const filterId = 'glow-' + (item.type || 'default').replace(/\s+/g, '-').toLowerCase();
+
+                const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                dot.setAttribute('cx', x);
+                dot.setAttribute('cy', y);
+                dot.setAttribute('r', 12);
+                dot.setAttribute('fill', color);
+                dot.setAttribute('opacity', '1');
+                dot.setAttribute('stroke', 'rgba(255,255,255,0.3)');
+                dot.setAttribute('stroke-width', '2');
+                dot.setAttribute('filter', `url(#${filterId})`);
+                dot.setAttribute('role', 'button');
+                dot.setAttribute('data-index', index);
+                dot.classList.add('radar-dot');
+                dot.style.cursor = 'grab';
+                dot.style.color = color;
+
+                const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+                title.textContent = item.title || 'Phenomenon';
+                dot.appendChild(title);
+
+                // Mouse down - start potential drag
+                dot.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    draggedDot = dot;
+                    isDragging = false;
+                    const coords = getSVGCoords(e);
+                    dragStartPos = { x: coords.x, y: coords.y };
+                    dot.style.cursor = 'grabbing';
+                });
+
+                // Add reference number label on the dot
+                const refLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                refLabel.setAttribute('x', x);
+                refLabel.setAttribute('y', y + 1);
+                refLabel.setAttribute('fill', (item.type === 'Strengthening' || item.type === 'Weak Signal') ? '#000000' : '#ffffff');
+                refLabel.setAttribute('font-size', '11');
+                refLabel.setAttribute('font-weight', '700');
+                refLabel.setAttribute('text-anchor', 'middle');
+                refLabel.setAttribute('dominant-baseline', 'middle');
+                refLabel.setAttribute('pointer-events', 'none');
+                refLabel.setAttribute('data-ref-index', index);
+                refLabel.textContent = index + 1;
+
+                // Store item reference on dot for click handler
+                dot._phenomenonItem = item;
+                dot._refLabel = refLabel;
+
+                allDots.push(dot);
+                svg.appendChild(dot);
+                svg.appendChild(refLabel);
+            });
+
+            // Mouse move on SVG - handle drag
+            svg.addEventListener('mousemove', (e) => {
+                if (!draggedDot) return;
+
+                const coords = getSVGCoords(e);
+                const dx = coords.x - dragStartPos.x;
+                const dy = coords.y - dragStartPos.y;
+
+                // Check if we've moved enough to be considered a drag
+                if (!isDragging && Math.sqrt(dx * dx + dy * dy) > dragThreshold) {
+                    isDragging = true;
+                }
+
+                if (isDragging) {
+                    const constrained = constrainToRadar(coords.x, coords.y);
+                    draggedDot.setAttribute('cx', constrained.x);
+                    draggedDot.setAttribute('cy', constrained.y);
+                    if (draggedDot._refLabel) {
+                        draggedDot._refLabel.setAttribute('x', constrained.x);
+                        draggedDot._refLabel.setAttribute('y', constrained.y + 1);
+                    }
+                }
+            });
+
+            // Mouse up - end drag or trigger click
+            svg.addEventListener('mouseup', (e) => {
+                if (!draggedDot) return;
+
+                const dot = draggedDot;
+                dot.style.cursor = 'grab';
+
+                if (isDragging) {
+                    // Update item's category and time horizon based on new position
+                    const newX = parseFloat(dot.getAttribute('cx'));
+                    const newY = parseFloat(dot.getAttribute('cy'));
+                    const newCategory = getCategoryFromPosition(newX, newY);
+                    const newTimeHorizon = getTimeHorizonFromPosition(newX, newY);
+
+                    // Update the stored item
+                    dot._phenomenonItem.timing = newTimeHorizon;
+
+                    // Update category in theme_tags based on new quadrant position
+                    const fixedCategories = ['Strategic', 'Regulatory', 'Operational', 'Financial'];
+                    const currentTags = dot._phenomenonItem.theme_tags || [];
+                    // Remove old category and prepend new one
+                    const nonCategoryTags = currentTags.filter(t => !fixedCategories.includes(t));
+                    dot._phenomenonItem.theme_tags = [newCategory, ...nonCategoryTags];
+
+                    // Also update in the main data store
+                    if (window.latestScanData && window.latestScanData.phenomena) {
+                        const phIndex = dot._phenomenonItem.index;
+                        if (window.latestScanData.phenomena[phIndex]) {
+                            window.latestScanData.phenomena[phIndex].timing = newTimeHorizon;
+                            window.latestScanData.phenomena[phIndex].theme_tags = [newCategory, ...nonCategoryTags];
+                        }
+                    }
+
+                    // Update the phenomenon card in the list below the radar
+                    const phenomenonIndex = dot._phenomenonItem.index;
+                    const phenomenaList = document.getElementById('phenomenaList');
+                    if (phenomenaList && phenomenaList.children[phenomenonIndex]) {
+                        const card = phenomenaList.children[phenomenonIndex];
+                        const tagsDiv = card.querySelector('.phenomenon-tags');
+                        if (tagsDiv) {
+                            const categoryHtml = newCategory ? `<span class="tag">${newCategory}</span>` : '';
+                            tagsDiv.innerHTML = `
+                                ${dot._phenomenonItem.type ? `<span class="tag type">${dot._phenomenonItem.type}</span>` : ''}
+                                ${newTimeHorizon ? `<span class="tag horizon">${newTimeHorizon}</span>` : ''}
+                                ${categoryHtml}
+                            `;
+                        }
+                    }
+
+                    // Select the dot and show updated scorecard
+                    allDots.forEach(d => d.classList.remove('selected'));
+                    dot.classList.add('selected');
+                    openScorecard(dot._phenomenonItem);
+                } else {
+                    // It was a click, not a drag
+                    allDots.forEach(d => d.classList.remove('selected'));
+                    dot.classList.add('selected');
+                    openScorecard(dot._phenomenonItem);
+                }
+
+                draggedDot = null;
+                isDragging = false;
+            });
+
+            // Mouse leave SVG - cancel drag
+            svg.addEventListener('mouseleave', () => {
+                if (draggedDot) {
+                    draggedDot.style.cursor = 'grab';
+                    draggedDot = null;
+                    isDragging = false;
+                }
+            });
+
+            container.appendChild(svg);
+
+            // Zoom and pan functionality
+            (function initZoomPan() {
+                const fullSize = size + padding * 2;
+                let zoom = 1;
+                const minZoom = 1;
+                const maxZoom = 4;
+                let panX = 0, panY = 0;
+                let isPanning = false;
+                let panStart = { x: 0, y: 0 };
+
+                function applyView() {
+                    const vw = fullSize / zoom;
+                    const vh = fullSize / zoom;
+                    const cx = fullSize / 2 + panX;
+                    const cy = fullSize / 2 + panY;
+                    let vx = cx - vw / 2;
+                    let vy = cy - vh / 2;
+                    // Clamp so we don't pan outside the SVG
+                    vx = Math.max(0, Math.min(vx, fullSize - vw));
+                    vy = Math.max(0, Math.min(vy, fullSize - vh));
+                    svg.setAttribute('viewBox', `${vx} ${vy} ${vw} ${vh}`);
+                }
+
+                function zoomBy(factor, clientX, clientY) {
+                    const prev = zoom;
+                    zoom = Math.max(minZoom, Math.min(maxZoom, zoom * factor));
+                    if (zoom === prev) return;
+                    // If client coords given, zoom toward that point
+                    if (clientX !== undefined) {
+                        const rect = container.getBoundingClientRect();
+                        const rx = (clientX - rect.left) / rect.width - 0.5;
+                        const ry = (clientY - rect.top) / rect.height - 0.5;
+                        panX += rx * fullSize * (1 / prev - 1 / zoom);
+                        panY += ry * fullSize * (1 / prev - 1 / zoom);
+                    }
+                    applyView();
+                }
+
+                function resetView() {
+                    zoom = 1; panX = 0; panY = 0;
+                    applyView();
+                }
+
+                // Mouse wheel zoom
+                container.addEventListener('wheel', (e) => {
+                    e.preventDefault();
+                    const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+                    zoomBy(factor, e.clientX, e.clientY);
+                }, { passive: false });
+
+                // Pan with mouse drag (only when zoomed in)
+                container.addEventListener('mousedown', (e) => {
+                    if (zoom <= 1) return;
+                    // Don't interfere with dot dragging - only pan from background or with middle button
+                    if (e.button === 1 || e.target === svg || e.target === background || e.target.tagName === 'circle' && !e.target.classList.contains('radar-dot')) {
+                        isPanning = true;
+                        panStart = { x: e.clientX, y: e.clientY };
+                        container.classList.add('panning');
+                        e.preventDefault();
+                    }
+                });
+
+                window.addEventListener('mousemove', (e) => {
+                    if (!isPanning) return;
+                    const rect = container.getBoundingClientRect();
+                    const scale = fullSize / rect.width;
+                    panX -= (e.clientX - panStart.x) * scale / zoom;
+                    panY -= (e.clientY - panStart.y) * scale / zoom;
+                    panStart = { x: e.clientX, y: e.clientY };
+                    applyView();
+                });
+
+                window.addEventListener('mouseup', () => {
+                    if (isPanning) {
+                        isPanning = false;
+                        container.classList.remove('panning');
+                    }
+                });
+
+                // Touch pinch-to-zoom
+                let lastTouchDist = null;
+                container.addEventListener('touchstart', (e) => {
+                    if (e.touches.length === 2) {
+                        e.preventDefault();
+                        const dx = e.touches[0].clientX - e.touches[1].clientX;
+                        const dy = e.touches[0].clientY - e.touches[1].clientY;
+                        lastTouchDist = Math.hypot(dx, dy);
+                    } else if (e.touches.length === 1 && zoom > 1) {
+                        isPanning = true;
+                        panStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                    }
+                }, { passive: false });
+
+                container.addEventListener('touchmove', (e) => {
+                    if (e.touches.length === 2 && lastTouchDist !== null) {
+                        e.preventDefault();
+                        const dx = e.touches[0].clientX - e.touches[1].clientX;
+                        const dy = e.touches[0].clientY - e.touches[1].clientY;
+                        const dist = Math.hypot(dx, dy);
+                        const factor = dist / lastTouchDist;
+                        const mx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                        const my = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+                        zoomBy(factor, mx, my);
+                        lastTouchDist = dist;
+                    } else if (e.touches.length === 1 && isPanning) {
+                        e.preventDefault();
+                        const rect = container.getBoundingClientRect();
+                        const scale = fullSize / rect.width;
+                        panX -= (e.touches[0].clientX - panStart.x) * scale / zoom;
+                        panY -= (e.touches[0].clientY - panStart.y) * scale / zoom;
+                        panStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                        applyView();
+                    }
+                }, { passive: false });
+
+                container.addEventListener('touchend', () => {
+                    lastTouchDist = null;
+                    isPanning = false;
+                });
+
+                // Button controls
+                document.getElementById('radarZoomIn').addEventListener('click', () => zoomBy(1.3));
+                document.getElementById('radarZoomOut').addEventListener('click', () => zoomBy(1 / 1.3));
+                document.getElementById('radarZoomReset').addEventListener('click', resetView);
+            })();
+
+            const typeGroup = document.createElement('div');
+            typeGroup.className = 'legend-group';
+            typeGroup.innerHTML = `<div class="legend-title">Signal Types</div>`;
+            types.forEach(type => {
+                const row = document.createElement('div');
+                row.className = 'legend-item';
+                row.innerHTML = `<span class="legend-swatch" style="background:${typeColors[type]}"></span>${type}`;
+                typeGroup.appendChild(row);
+            });
+            legend.appendChild(typeGroup);
+
+            const horizonGroup = document.createElement('div');
+            horizonGroup.className = 'legend-group';
+            horizonGroup.innerHTML = `<div class="legend-title">Time Horizons</div>`;
+            horizons.forEach(horizon => {
+                const row = document.createElement('div');
+                row.className = 'legend-item';
+                row.innerHTML = `<span class="legend-swatch" style="background:#888888"></span>${horizon}`;
+                horizonGroup.appendChild(row);
+            });
+            legend.appendChild(horizonGroup);
+
+            const sourcesCount = data.sources ? data.sources.length : 0;
+            const categoriesText = categories.join(', ');
+            const horizonCounts = horizons.map(horizon => {
+                const count = items.filter(item => item.timing === horizon).length;
+                const label = horizon.split(' ')[0].toLowerCase();
+                return `${count} ${label}-term`;
+            }).join(', ');
+            const sampleSources = getTopSources(data.sources || []).map(source => source.title).filter(Boolean).join('; ');
+            const leadCategory = categories[0];
+            const leadHorizon = horizons.sort((a, b) => (
+                items.filter(item => item.timing === b).length - items.filter(item => item.timing === a).length
+            ))[0];
+
+            summary.innerHTML = `
+                <strong>${items.length} phenomena</strong> signal momentum led by <strong>${leadCategory}</strong>, with the heaviest concentration in the <strong>${leadHorizon.toLowerCase()}</strong> horizon. The mix spans ${categoriesText}, balancing ${horizonCounts}. Evidence was drawn from <strong>${sourcesCount} sources</strong>${sampleSources ? `, led by ${sampleSources}` : ''}.
+            `;
+        }
+
+        // Download modal functionality
+        let editablePhenomena = [];
+
+        function openEditModal() {
+            if (!window.latestScanData || !window.latestScanData.phenomena) {
+                alert('No data available to edit. Please run a scan first.');
+                return;
+            }
+
+            // Deep copy the phenomena for editing
+            editablePhenomena = JSON.parse(JSON.stringify(window.latestScanData.phenomena));
+
+            renderEditModal();
+
+            document.getElementById('downloadModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function renderEditModal() {
+            const modalBody = document.getElementById('downloadModalBody');
+            modalBody.innerHTML = '';
+
+            const types = ['Strengthening', 'Weakening', 'Established', 'Weak Signal', 'Wild Card'];
+            const horizons = ['Near-term (0-5 years)', 'Mid-term (5-10 years)', 'Long-term (10-20 years)'];
+
+            editablePhenomena.forEach((phenomenon, index) => {
+                const editCard = document.createElement('div');
+                editCard.className = 'edit-phenomenon';
+                editCard.innerHTML = `
+                    <div class="edit-phenomenon-header">
+                        <span class="edit-phenomenon-number">${index + 1}</span>
+                        <div class="edit-field" style="flex: 1; margin-bottom: 0;">
+                            <label for="edit-title-${index}">Title</label>
+                            <input type="text" id="edit-title-${index}" value="${escapeHtml(phenomenon.title || '')}" oninput="updatePhenomenon(${index}, 'title', this.value)">
+                        </div>
+                        <button class="edit-remove-btn" onclick="removePhenomenon(${index})" title="Remove this trend">Remove</button>
+                    </div>
+                    <div class="edit-field-row" style="grid-template-columns: 1fr 1fr 1fr;">
+                        <div class="edit-field">
+                            <label for="edit-category-${index}">Category</label>
+                            <select id="edit-category-${index}" oninput="updatePhenomenonCategory(${index}, this.value)">
+                                ${['Strategic', 'Regulatory', 'Operational', 'Financial'].map(cat => `<option value="${cat}" ${(phenomenon.theme_tags || [])[0] === cat ? 'selected' : ''}>${cat}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="edit-field">
+                            <label for="edit-type-${index}">Signal Type</label>
+                            <select id="edit-type-${index}" oninput="updatePhenomenon(${index}, 'type', this.value)">
+                                ${types.map(type => `<option value="${type}" ${phenomenon.type === type ? 'selected' : ''}>${type}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="edit-field">
+                            <label for="edit-timing-${index}">Timing</label>
+                            <select id="edit-timing-${index}" oninput="updatePhenomenon(${index}, 'timing', this.value)">
+                                <option value="" ${!phenomenon.timing ? 'selected' : ''}>None (Weak Signal)</option>
+                                ${horizons.map(horizon => `<option value="${horizon}" ${phenomenon.timing === horizon ? 'selected' : ''}>${horizon}</option>`).join('')}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="edit-field">
+                        <label for="edit-summary-${index}">Summary</label>
+                        <textarea id="edit-summary-${index}" rows="3" oninput="updatePhenomenon(${index}, 'summary', this.value)">${escapeHtml(phenomenon.summary || '')}</textarea>
+                    </div>
+                    <div class="edit-field">
+                        <label for="edit-background-${index}">Background</label>
+                        <textarea id="edit-background-${index}" rows="2" oninput="updatePhenomenon(${index}, 'background', this.value)">${escapeHtml(phenomenon.background || '')}</textarea>
+                    </div>
+                    <div class="edit-field">
+                        <label for="edit-impact-${index}">Impact</label>
+                        <textarea id="edit-impact-${index}" rows="2" oninput="updatePhenomenon(${index}, 'impact', this.value)">${escapeHtml(phenomenon.impact || '')}</textarea>
+                    </div>
+                    <div class="edit-field">
+                        <label for="edit-additional-${index}">Additional Information (one per line)</label>
+                        <textarea id="edit-additional-${index}" rows="2" oninput="updatePhenomenonArray(${index}, 'additional_information', this.value)">${(phenomenon.additional_information || []).join('\n')}</textarea>
+                    </div>
+                `;
+                modalBody.appendChild(editCard);
+            });
+
+            // Add "Add New Trend" button at the bottom
+            const addBtn = document.createElement('button');
+            addBtn.className = 'edit-add-btn';
+            addBtn.onclick = addNewPhenomenon;
+            addBtn.innerHTML = '+ Add New Trend';
+            modalBody.appendChild(addBtn);
+        }
+
+        function removePhenomenon(index) {
+            editablePhenomena.splice(index, 1);
+            renderEditModal();
+        }
+
+        function addNewPhenomenon() {
+            editablePhenomena.push({
+                title: '',
+                theme_tags: ['Strategic'],
+                type: 'Strengthening',
+                timing: 'Near-term (0-5 years)',
+                summary: '',
+                background: '',
+                impact: '',
+                additional_information: []
+            });
+            renderEditModal();
+            // Scroll to the new card
+            const modalBody = document.getElementById('downloadModalBody');
+            modalBody.scrollTop = modalBody.scrollHeight;
+        }
+
+        function closeEditModal() {
+            document.getElementById('downloadModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function updatePhenomenon(index, field, value) {
+            if (editablePhenomena[index]) {
+                editablePhenomena[index][field] = value;
+            }
+        }
+
+        function updatePhenomenonArray(index, field, value) {
+            if (editablePhenomena[index]) {
+                editablePhenomena[index][field] = value.split('\n').filter(line => line.trim() !== '');
+            }
+        }
+
+        function updatePhenomenonCategory(index, value) {
+            if (editablePhenomena[index]) {
+                editablePhenomena[index].theme_tags = [value];
+            }
+        }
+
+        function applyEdits() {
+            // Apply edited phenomena back to the main data
+            window.latestScanData.phenomena = JSON.parse(JSON.stringify(editablePhenomena));
+            const sources = window.latestScanData.sources || [];
+
+            // Re-render radar and results with edited data
+            renderRadarMap({ phenomena: window.latestScanData.phenomena, sources: sources });
+            const topic = document.getElementById('topicInput').value.trim() || 'Foresight Scan';
+            displayResults(topic, window.latestScanData);
+
+            closeEditModal();
+        }
+
+        function generateReportHtml(topic, phenomena, radarSvg, sources) {
+            const typeColors = {
+                'Strengthening': '#2e7d32',
+                'Weakening': '#1565c0',
+                'Established': '#6a1b9a',
+                'Weak Signal': '#546e7a',
+                'Wild Card': '#c62828'
+            };
+
+            const phenomenaHtml = phenomena.map((p, i) => {
+                const typeColor = typeColors[p.type] || '#0d245c';
+                const cat = (p.theme_tags || []).find(t => ['Strategic','Regulatory','Operational','Financial'].includes(t));
+                return `
+                <div class="phenomenon" style="border-left-color:${typeColor};">
+                    <h3>${i + 1}. ${escapeHtml(p.title || 'Untitled')}</h3>
+                    <div class="tags">
+                        <span class="tag type" style="background:${typeColor};border-color:${typeColor};">${escapeHtml(p.type || 'Unknown')}</span>
+                        ${p.timing ? `<span class="tag">${escapeHtml(p.timing)}</span>` : ''}
+                        ${cat ? `<span class="tag">${escapeHtml(cat)}</span>` : ''}
+                    </div>
+                    <p class="summary">${escapeHtml(p.summary || '')}</p>
+                    ${p.background ? `
+                        <div class="sub-section">
+                            <h4>Background</h4>
+                            <p>${escapeHtml(p.background)}</p>
+                        </div>
+                    ` : ''}
+                    ${p.impact ? `
+                        <div class="sub-section">
+                            <h4>Impact</h4>
+                            <p>${escapeHtml(p.impact)}</p>
+                        </div>
+                    ` : ''}
+                    ${p.additional_information && p.additional_information.length > 0 ? `
+                        <div class="sub-section">
+                            <h4>Additional Information</h4>
+                            <ul>${p.additional_information.map(info => `<li>${linkifyAdditionalInfo(info)}</li>`).join('')}</ul>
+                        </div>
+                    ` : ''}
+                </div>`;
+            }).join('');
+
+            const sourcesHtml = sources.length > 0 ? `
+                <div class="sources-section">
+                    <h2 class="section-heading">Sources</h2>
+                    ${sources.map(s => `
+                        <div class="source">
+                            <a href="${escapeHtml(s.link)}" target="_blank">${escapeHtml(s.title)}</a>
+                            <p>${escapeHtml(s.snippet || '')}</p>
+                        </div>
+                    `).join('')}
+                </div>
+            ` : '';
+
+            return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Foresight Report: ${escapeHtml(topic)}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #ffffff;
+            color: #1a1a1a;
+            padding: 40px 20px;
+            line-height: 1.5;
+        }
+        .container { max-width: 960px; margin: 0 auto; }
+        header {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            border-bottom: 3px solid #00aeef;
+            padding-bottom: 20px;
+            margin-bottom: 36px;
+        }
+        .header-left {}
+        .report-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; color: #00aeef; font-weight: 700; margin-bottom: 6px; }
+        h1 { font-size: 1.9rem; color: #0d245c; font-weight: 800; line-height: 1.2; }
+        .header-right { text-align: right; font-size: 0.85rem; color: #666; line-height: 1.7; flex-shrink: 0; margin-left: 24px; }
+        .radar-section {
+            background: #f0f8ff;
+            border: 1px solid #bee3f8;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 36px;
+        }
+        .radar-title { font-size: 0.75rem; color: #0d245c; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 16px; }
+        .radar-canvas { max-width: 800px; margin: 0 auto; }
+        .radar-canvas svg { width: 100%; height: auto; }
+        .section-heading {
+            font-size: 1.1rem;
+            color: #0d245c;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 18px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e8e8e8;
+        }
+        .phenomenon {
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e8e8e8;
+            border-left: 5px solid #0d245c;
+            padding: 18px 22px;
+            margin-bottom: 14px;
+            page-break-inside: avoid;
+        }
+        .phenomenon h3 { font-size: 1rem; color: #0d245c; margin-bottom: 10px; font-weight: 700; }
+        .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+        .tag {
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: #e8edf2;
+            color: #444;
+            border: 1px solid #d0d8e0;
+        }
+        .tag.type { color: #ffffff; }
+        .summary { color: #222; line-height: 1.65; margin-bottom: 10px; font-size: 0.95rem; }
+        .sub-section { margin-top: 12px; }
+        .sub-section h4 { font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 5px; font-weight: 700; }
+        .sub-section p { color: #444; font-size: 0.9rem; line-height: 1.6; }
+        .sub-section ul { list-style: none; padding-left: 14px; }
+        .sub-section li { color: #444; padding: 3px 0; font-size: 0.9rem; position: relative; }
+        .sub-section li::before { content: "→"; position: absolute; left: -14px; color: #00aeef; }
+        .sub-section a { color: #0d245c; }
+        .sources-section { margin-top: 36px; padding-top: 20px; border-top: 2px solid #e0e0e0; }
+        .source { padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
+        .source a { color: #0d245c; text-decoration: none; font-weight: 600; font-size: 0.9rem; }
+        .source a:hover { text-decoration: underline; }
+        .source p { font-size: 0.85rem; color: #666; margin-top: 4px; }
+        footer { text-align: center; margin-top: 36px; padding-top: 20px; border-top: 1px solid #e0e0e0; color: #888; font-size: 0.8rem; line-height: 1.7; }
+        @media print {
+            body { padding: 20px; }
+            .phenomenon { page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-left">
+                <p class="report-label">Strategic Foresight Report</p>
+                <h1>${escapeHtml(topic)}</h1>
+            </div>
+            <div class="header-right">
+                <span>Generated ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</span><br>
+                <span>${phenomena.length} phenomena identified</span>
+            </div>
+        </header>
+
+        <div class="radar-section">
+            <p class="radar-title">Strategic Radar Map</p>
+            <div class="radar-canvas">${radarSvg}</div>
+        </div>
+
+        <h2 class="section-heading">Identified Phenomena (${phenomena.length})</h2>
+        ${phenomenaHtml}
+
+        ${sourcesHtml}
+
+        <footer>
+            <p>This report was generated using a Generative AI tool for internal exploratory analysis only.<br>
+            Outputs must be independently reviewed and validated before any external use.</p>
+            <p style="margin-top:8px;">Generated using Anthropic Claude (Sonnet), via Strategic Foresight Scanner, with public web sources, on ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}. Outputs reviewed by Strategic Risk Team.</p>
+        </footer>
+    </div>
+</body>
+</html>`;
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('downloadModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeEditModal();
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && document.getElementById('downloadModal').classList.contains('active')) {
+                closeEditModal();
+            }
+        });
+
+        // ── Export menu ────────────────────────────────────────────────────────
+        function toggleExportMenu() {
+            document.getElementById('exportMenu').classList.toggle('open');
+        }
+        // Close export dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            const menu = document.getElementById('exportMenu');
+            if (!menu.contains(e.target)) {
+                menu.classList.remove('open');
+            }
+        });
+
+        // ── PowerPoint export (PptxGenJS) ─────────────────────────────────────
+        async function exportPptx() {
+            if (!window.latestScanData || !window.latestScanData.phenomena) { alert('No data to export. Please run a scan first.'); return; }
+            if (typeof PptxGenJS === 'undefined') { alert('PowerPoint library is loading, please try again in a moment.'); return; }
+
+            const topic = window.latestScanTopic || document.getElementById('topicInput').value.trim() || 'Foresight Scan';
+            const data = window.latestScanData;
+            const typeColors = { 'Strengthening': '4CAF50', 'Weakening': '2196F3', 'Established': '9C27B0', 'Weak Signal': '9E9E9E', 'Wild Card': 'F44336' };
+
+            try {
+            const pptx = new PptxGenJS();
+            pptx.defineLayout({ name: 'WIDE', width: 13.33, height: 7.5 });
+            pptx.layout = 'WIDE';
+
+            const NAVY = '0d245c', BLUE = '00aeef', WHITE = 'FFFFFF', DARK = '111111', SILVER = '888888';
+
+            // ── Title slide ────────────────────────────────────────────────────
+            const titleSlide = pptx.addSlide();
+            titleSlide.background = { color: DARK };
+            titleSlide.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: 0.35, h: 7.5, fill: { color: BLUE } });
+            titleSlide.addText('Strategic Foresight Report', { x: 0.7, y: 1.8, w: 12, h: 1, fontSize: 36, bold: true, color: BLUE, fontFace: 'Calibri' });
+            titleSlide.addText(topic, { x: 0.7, y: 2.9, w: 12, h: 0.7, fontSize: 24, color: WHITE, fontFace: 'Calibri' });
+            titleSlide.addText(`Generated ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`, { x: 0.7, y: 3.7, w: 10, h: 0.4, fontSize: 14, color: SILVER, fontFace: 'Calibri' });
+            titleSlide.addText(`${data.phenomena.length} phenomena identified`, { x: 0.7, y: 4.1, w: 6, h: 0.4, fontSize: 14, color: SILVER, fontFace: 'Calibri' });
+            titleSlide.addText('Powered by Anthropic Claude via Strategic Foresight Scanner', { x: 0, y: 7.1, w: 13.33, h: 0.35, fontSize: 9, color: SILVER, align: 'center', fontFace: 'Calibri' });
+
+            // ── Executive summary slide ────────────────────────────────────────
+            if (data.executive_summary && data.executive_summary.dominant_theme) {
+                const execSlide = pptx.addSlide();
+                execSlide.background = { color: DARK };
+                execSlide.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: 13.33, h: 0.55, fill: { color: NAVY } });
+                execSlide.addText('Executive Brief', { x: 0.4, y: 0.1, w: 12, h: 0.35, fontSize: 14, bold: true, color: BLUE, fontFace: 'Calibri' });
+                const execItems = [
+                    { label: 'Dominant Theme', text: data.executive_summary.dominant_theme, color: BLUE },
+                    { label: 'Most Urgent Signal', text: data.executive_summary.most_urgent, color: 'F44336' },
+                    { label: 'Biggest Wildcard', text: data.executive_summary.biggest_wildcard, color: SILVER }
+                ];
+                execItems.forEach((item, i) => {
+                    const yPos = 0.85 + i * 2.0;
+                    execSlide.addShape(pptx.ShapeType.rect, { x: 0.4, y: yPos, w: 12.5, h: 1.7, fill: { color: '1a1a1a' }, line: { color: item.color, width: 2 } });
+                    execSlide.addText(item.label.toUpperCase(), { x: 0.6, y: yPos + 0.12, w: 12, h: 0.3, fontSize: 9, bold: true, color: item.color, fontFace: 'Calibri', charSpacing: 1 });
+                    execSlide.addText(item.text, { x: 0.6, y: yPos + 0.45, w: 12, h: 1.1, fontSize: 13, color: 'e0e0e0', fontFace: 'Calibri', valign: 'top', wrap: true });
+                });
+            }
+
+            // ── One slide per phenomenon ────────────────────────────────────────
+            data.phenomena.forEach((p, i) => {
+                const slide = pptx.addSlide();
+                slide.background = { color: DARK };
+                slide.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: 13.33, h: 0.55, fill: { color: NAVY } });
+                const dotColor = typeColors[p.type] || BLUE;
+                slide.addShape(pptx.ShapeType.ellipse, { x: 0.3, y: 0.12, w: 0.3, h: 0.3, fill: { color: dotColor } });
+                const refNum = String(i + 1).padStart(2, '0');
+                slide.addText(`${refNum}  ${p.title || 'Untitled'}`, { x: 0.7, y: 0.1, w: 11.5, h: 0.36, fontSize: 15, bold: true, color: WHITE, fontFace: 'Calibri' });
+                // Tags line
+                const cat = (p.theme_tags || []).find(t => ['Strategic','Regulatory','Operational','Financial'].includes(t)) || '';
+                const tagsStr = [p.type, p.timing || 'Timing TBC', cat, p.source_confidence ? `Source: ${p.source_confidence}` : ''].filter(Boolean).join('   |   ');
+                slide.addText(tagsStr, { x: 0.4, y: 0.6, w: 12.5, h: 0.3, fontSize: 10, color: SILVER, fontFace: 'Calibri' });
+                // Summary
+                slide.addText('Summary', { x: 0.4, y: 1.05, w: 12.5, h: 0.28, fontSize: 9, bold: true, color: BLUE, fontFace: 'Calibri', charSpacing: 1 });
+                slide.addText(p.summary || '', { x: 0.4, y: 1.33, w: 12.5, h: 1.3, fontSize: 11, color: 'dddddd', fontFace: 'Calibri', wrap: true, valign: 'top' });
+                // Background
+                if (p.background) {
+                    slide.addText('Background', { x: 0.4, y: 2.75, w: 6.2, h: 0.28, fontSize: 9, bold: true, color: BLUE, fontFace: 'Calibri', charSpacing: 1 });
+                    slide.addText(p.background, { x: 0.4, y: 3.03, w: 6.2, h: 1.55, fontSize: 10.5, color: 'cccccc', fontFace: 'Calibri', wrap: true, valign: 'top' });
+                }
+                // Impact
+                if (p.impact) {
+                    slide.addText('Impact', { x: 6.9, y: 2.75, w: 6.0, h: 0.28, fontSize: 9, bold: true, color: BLUE, fontFace: 'Calibri', charSpacing: 1 });
+                    slide.addText(p.impact, { x: 6.9, y: 3.03, w: 6.0, h: 1.55, fontSize: 10.5, color: 'cccccc', fontFace: 'Calibri', wrap: true, valign: 'top' });
+                }
+                // Additional info
+                if (p.additional_information && p.additional_information.length > 0) {
+                    slide.addText('Additional Information', { x: 0.4, y: 4.7, w: 12.5, h: 0.28, fontSize: 9, bold: true, color: BLUE, fontFace: 'Calibri', charSpacing: 1 });
+                    const infoText = p.additional_information.slice(0, 3).join('\n');
+                    slide.addText(infoText, { x: 0.4, y: 4.98, w: 12.5, h: 1.5, fontSize: 9.5, color: SILVER, fontFace: 'Calibri', wrap: true, valign: 'top' });
+                }
+                // Slide number
+                slide.addText(`${i + 1} / ${data.phenomena.length}`, { x: 12.2, y: 7.2, w: 1.0, h: 0.25, fontSize: 9, color: SILVER, align: 'right', fontFace: 'Calibri' });
+            });
+
+            // ── Disclaimer slide ────────────────────────────────────────────────
+            const disclaimerSlide = pptx.addSlide();
+            disclaimerSlide.background = { color: DARK };
+            disclaimerSlide.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: 0.35, h: 7.5, fill: { color: BLUE } });
+            disclaimerSlide.addText('Disclaimer', { x: 0.7, y: 1.5, w: 12, h: 0.6, fontSize: 24, bold: true, color: BLUE, fontFace: 'Calibri' });
+            disclaimerSlide.addText('This report was generated using a Generative AI tool for internal exploratory analysis only. Outputs must be independently reviewed and validated before any external use.', { x: 0.7, y: 2.4, w: 11.5, h: 1.2, fontSize: 14, color: 'cccccc', fontFace: 'Calibri', wrap: true });
+            disclaimerSlide.addText(`Generated using Anthropic Claude (Sonnet) via Strategic Foresight Scanner with public web sources on ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}.`, { x: 0.7, y: 3.8, w: 11.5, h: 0.8, fontSize: 12, color: SILVER, fontFace: 'Calibri', wrap: true });
+
+            const blob = await pptx.write({ outputType: 'blob' });
+            triggerDownload(blob, `foresight-${topic.toLowerCase().replace(/\s+/g, '-')}.pptx`);
+            } catch (err) {
+                console.error('PowerPoint export failed:', err);
+                alert('PowerPoint export failed: ' + err.message);
+            }
+        }
+
+        // ── PDF export ────────────────────────────────────────────────────────
+        function exportPdf() {
+            if (!window.latestScanData || !window.latestScanData.phenomena) {
+                alert('No data available to export. Please run a scan first.');
+                return;
+            }
+            const topic = document.getElementById('topicInput').value.trim() || 'Foresight Scan';
+            const phenomena = window.latestScanData.phenomena;
+            const sources = window.latestScanData.sources || [];
+            const radarSvg = document.getElementById('radarCanvas').innerHTML;
+            const reportHtml = generateReportHtml(topic, phenomena, radarSvg, sources);
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(reportHtml);
+            printWindow.document.close();
+            printWindow.focus();
+            setTimeout(() => { printWindow.print(); }, 500);
+        }
+
+        function triggerDownload(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // ── Session storage history ─────────────────────────────────────────────
+        const HISTORY_KEY = 'foresightScanHistory';
+        const MAX_HISTORY = 5;
+
+        function saveToHistory(topic, data) {
+            try {
+                const history = getHistory();
+                // Remove existing entry for same topic (case-insensitive)
+                const filtered = history.filter(h => h.topic.toLowerCase() !== topic.toLowerCase());
+                filtered.unshift({ topic, timestamp: Date.now(), data });
+                const trimmed = filtered.slice(0, MAX_HISTORY);
+                sessionStorage.setItem(HISTORY_KEY, JSON.stringify(trimmed));
+                renderScanHistory();
+            } catch (e) { /* sessionStorage might be full */ }
+        }
+
+        function getHistory() {
+            try {
+                return JSON.parse(sessionStorage.getItem(HISTORY_KEY) || '[]');
+            } catch (e) { return []; }
+        }
+
+        function renderScanHistory() {
+            const history = getHistory();
+            const container = document.getElementById('scanHistory');
+            const list = document.getElementById('scanHistoryList');
+            if (history.length === 0) { container.classList.remove('visible'); return; }
+            list.innerHTML = '';
+            history.forEach((entry, idx) => {
+                const chip = document.createElement('div');
+                chip.className = 'scan-history-chip';
+                const timeAgo = formatTimeAgo(entry.timestamp);
+                chip.innerHTML = `<span class="scan-history-chip-topic" title="${entry.topic}">${entry.topic}</span><span class="scan-history-chip-time">${timeAgo}</span>`;
+                chip.addEventListener('click', () => {
+                    document.getElementById('topicInput').value = entry.topic;
+                    updateCharCount();
+                    displayResults(entry.topic, entry.data);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+                list.appendChild(chip);
+            });
+            container.classList.add('visible');
+        }
+
+        function formatTimeAgo(timestamp) {
+            const mins = Math.round((Date.now() - timestamp) / 60000);
+            if (mins < 1) return 'just now';
+            if (mins < 60) return `${mins}m ago`;
+            return `${Math.round(mins / 60)}h ago`;
+        }
+
+        // On page load, restore scan history display and last scan if available
+        (function initHistory() {
+            const history = getHistory();
+            if (history.length > 0) {
+                renderScanHistory();
+                // Restore the most recent scan automatically
+                const latest = history[0];
+                document.getElementById('topicInput').value = latest.topic;
+                updateCharCount();
+                displayResults(latest.topic, latest.data);
+            }
+        })();
+    </script>
+</body>
+</html>
