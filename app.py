@@ -528,11 +528,11 @@ Provide a JSON response with exactly these three sections:
     "score": 62,
     "trend": "STABLE",
     "top_risks": [
-      {{"title": "...", "severity": "HIGH", "description": "..."}},
-      {{"title": "...", "severity": "HIGH", "description": "..."}},
-      {{"title": "...", "severity": "MEDIUM", "description": "..."}},
-      {{"title": "...", "severity": "MEDIUM", "description": "..."}},
-      {{"title": "...", "severity": "LOW", "description": "..."}}
+      {{"title": "...", "severity": "HIGH", "description": "...", "insurance_implications": "..."}},
+      {{"title": "...", "severity": "HIGH", "description": "...", "insurance_implications": "..."}},
+      {{"title": "...", "severity": "MEDIUM", "description": "...", "insurance_implications": "..."}},
+      {{"title": "...", "severity": "MEDIUM", "description": "...", "insurance_implications": "..."}},
+      {{"title": "...", "severity": "LOW", "description": "...", "insurance_implications": "..."}}
     ],
     "summary": "1-2 sentences on the overall risk environment."
   }}
@@ -545,6 +545,7 @@ Rules:
 - Each risk "severity" must be one of: HIGH, MEDIUM, LOW
 - "score" must be a number 0-100 reflecting current global risk level
 - Base all assessments on the provided headlines; replace all "..." placeholders with real content
+- Each risk "insurance_implications" must be 1-2 sentences explaining what that specific risk means for an insurance broker and their clients — covering relevant lines of coverage, potential claims exposure, or client advisory actions
 
 Return ONLY valid JSON matching the structure above, no markdown or extra text."""
 
