@@ -1341,6 +1341,8 @@
 
         .risk-item-title { font-weight: 600; color: var(--lockton-white); }
         .risk-item-desc  { color: #d0d0d0; line-height: 1.4; font-size: 0.78rem; }
+        .risk-item-insurance { color: #a0a8b0; line-height: 1.4; font-size: 0.78rem; margin-top: 4px; }
+        .risk-insurance-label { font-weight: 600; color: #8a9bb0; }
 
         /* Regional Newsfeed */
         .newsfeed-section {
@@ -2354,6 +2356,7 @@
                         <span class="risk-item-title">${r.title}</span>
                     </div>
                     ${r.description ? `<div class="risk-item-desc">${r.description}</div>` : ''}
+                    ${r.insurance_implications ? `<div class="risk-item-insurance"><span class="risk-insurance-label">Insurance Implications:</span> ${r.insurance_implications}</div>` : ''}
                 </div>`
             ).join('');
 
