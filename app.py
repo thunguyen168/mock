@@ -480,6 +480,48 @@ REGION_DISPLAY_NAMES = {
 }
 
 
+FILTER_QUERIES = {
+    'all': [
+        'global security geopolitical crisis news today',
+        'international military conflict tensions 2025',
+        'world economic financial market risk today',
+        'major breaking news international today',
+    ],
+    'geopolitical': [
+        'global military conflict tensions today',
+        'geopolitical crisis diplomacy sanctions 2025',
+        'war conflict flashpoints international security today',
+        'great power rivalry US China Russia today',
+    ],
+    'macroeconomic': [
+        'global economy recession risk today',
+        'financial markets instability inflation 2025',
+        'trade wars tariffs economic disruption today',
+        'central bank policy interest rates global economy today',
+    ],
+    'regulatory': [
+        'global regulatory policy changes 2025',
+        'international compliance legislation financial regulation today',
+        'government policy shifts sanctions regulation today',
+        'ESG regulation data privacy antitrust policy 2025',
+    ],
+    'climate_natcat': [
+        'extreme weather events natural disasters today 2025',
+        'climate risk flood earthquake wildfire hurricane today',
+        'natural catastrophe high risk regions 2025',
+        'climate change physical risk insurance exposure today',
+    ],
+}
+
+FILTER_FOCUS_INSTRUCTIONS = {
+    'all': 'Focus on the most significant global risks across all categories.',
+    'geopolitical': 'Focus exclusively on geopolitical risks — military, diplomatic, conflict, and power dynamics.',
+    'macroeconomic': 'Focus exclusively on macroeconomic risks — markets, trade, inflation, financial stability, and economic policy.',
+    'regulatory': 'Focus exclusively on regulatory risks — policy changes, legislation, compliance shifts, and government interventions.',
+    'climate_natcat': 'Focus exclusively on climate and natural catastrophe risks — extreme weather, natural disasters, high-risk regions for floods, earthquakes, wildfires, and hurricanes, and physical climate risk exposure.',
+}
+
+
 @app.route('/api/intelligence')
 @require_auth
 def get_intelligence():
@@ -489,13 +531,12 @@ def get_intelligence():
     if not SERPER_API_KEY and not BRAVE_API_KEY:
         return jsonify({'error': 'No search API key configured'}), 500
 
+    filter_type = request.args.get('filter_type', 'all')
+    if filter_type not in FILTER_QUERIES:
+        filter_type = 'all'
+
     try:
-        unique_results = parallel_search([
-            'global security geopolitical crisis news today',
-            'international military conflict tensions 2025',
-            'world economic financial market risk today',
-            'major breaking news international today',
-        ], num_results=7)
+        unique_results = parallel_search(FILTER_QUERIES[filter_type], num_results=7)
 
         news_text = '\n'.join(
             f"- {r['title']}: {r['snippet']}"
@@ -504,10 +545,14 @@ def get_intelligence():
 
         client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY, timeout=120.0)
 
+        focus_instruction = FILTER_FOCUS_INSTRUCTIONS[filter_type]
+
         prompt = f"""You are a strategic intelligence analyst. Based on these current news headlines, provide a structured assessment.
 
 NEWS HEADLINES:
 {news_text}
+
+{focus_instruction}
 
 Provide a JSON response with exactly these three sections:
 {{
@@ -557,6 +602,7 @@ Return ONLY valid JSON matching the structure above, no markdown or extra text."
 
         intelligence = json.loads(extract_json_object(response.content[0].text))
         intelligence['timestamp'] = datetime.now(timezone.utc).isoformat()
+        intelligence['filter_type'] = filter_type
 
         return jsonify({'success': True, 'intelligence': intelligence})
 

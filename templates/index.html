@@ -1103,6 +1103,39 @@
         .intel-refresh-btn:hover { background: rgba(0, 174, 239, 0.2); }
         .intel-refresh-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+        /* Intelligence filter bar */
+        .intel-filter-bar {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+        }
+
+        .intel-filter-btn {
+            padding: 6px 15px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--lockton-silver);
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 0.2px;
+        }
+
+        .intel-filter-btn:hover {
+            background: rgba(0, 174, 239, 0.12);
+            border-color: rgba(0, 174, 239, 0.35);
+            color: var(--lockton-blue);
+        }
+
+        .intel-filter-btn.active {
+            background: rgba(0, 174, 239, 0.18);
+            border-color: rgba(0, 174, 239, 0.6);
+            color: var(--lockton-blue);
+        }
+
         .intel-timestamp {
             font-size: 0.76rem;
             color: var(--lockton-silver);
@@ -1644,6 +1677,15 @@
                 </div>
             </div>
 
+            <!-- Filter bar -->
+            <div class="intel-filter-bar" id="intelFilterBar">
+                <button class="intel-filter-btn active" data-filter="all"            onclick="setIntelFilter(this)">All</button>
+                <button class="intel-filter-btn"         data-filter="geopolitical"  onclick="setIntelFilter(this)">Geopolitical</button>
+                <button class="intel-filter-btn"         data-filter="macroeconomic" onclick="setIntelFilter(this)">Macroeconomic</button>
+                <button class="intel-filter-btn"         data-filter="regulatory"    onclick="setIntelFilter(this)">Regulatory</button>
+                <button class="intel-filter-btn"         data-filter="climate_natcat" onclick="setIntelFilter(this)">Climate &amp; Nat Cat</button>
+            </div>
+
             <!-- World Map -->
             <div class="intel-map-wrapper">
                 <div id="worldMap"></div>
@@ -1997,6 +2039,7 @@
         // Track active region and hotspot markers
         let _activeRegion = null;
         let _globalIntelCache = null;
+        let _activeFilter = 'all';
         const _hotspotMarkers = [];
 
         // --- HTML helpers ---
@@ -2237,6 +2280,14 @@
 
         // --- Intelligence loading ---
 
+        function setIntelFilter(el) {
+            document.querySelectorAll('.intel-filter-btn').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+            _activeFilter = el.dataset.filter;
+            _globalIntelCache = null;
+            loadIntelligence();
+        }
+
         async function loadIntelligence() {
             const btn = document.getElementById('intelRefreshBtn');
             if (btn) btn.disabled = true;
@@ -2244,7 +2295,8 @@
             PANEL_IDS.forEach(id => { document.getElementById(id).innerHTML = loadingHTML(); });
 
             try {
-                const resp = await fetch('/api/intelligence', {
+                const url = '/api/intelligence?filter_type=' + encodeURIComponent(_activeFilter);
+                const resp = await fetch(url, {
                     headers: { 'Accept': 'application/json' }
                 });
                 if (!resp.ok && resp.status === 401) throw new Error('Session expired. Please refresh the page.');
