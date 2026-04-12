@@ -2777,6 +2777,20 @@
                 `;
             }
 
+            if (item.emerging_risks) {
+                drivers.innerHTML += `
+                    <strong style="display:block;margin-top:12px;">Potential Emerging Risks:</strong>
+                    <p style="margin-top:6px;">${item.emerging_risks}</p>
+                `;
+            }
+
+            if (item.insurance_impact) {
+                drivers.innerHTML += `
+                    <strong style="display:block;margin-top:12px;">Insurance Impact:</strong>
+                    <p style="margin-top:6px;">${item.insurance_impact}</p>
+                `;
+            }
+
             if (item.additional_information && item.additional_information.length > 0) {
                 implications.innerHTML = `
                     <strong>Additional Information:</strong>
