@@ -2633,6 +2633,20 @@
                            </div>`
                         : '';
 
+                    const emergingRisksHtml = phenomenon.emerging_risks
+                        ? `<div class="phenomenon-section">
+                            <div class="phenomenon-section-title">Potential Emerging Risks</div>
+                            <p style="color:#d6d6d6;line-height:1.6;">${phenomenon.emerging_risks}</p>
+                           </div>`
+                        : '';
+
+                    const insuranceImpactHtml = phenomenon.insurance_impact
+                        ? `<div class="phenomenon-section">
+                            <div class="phenomenon-section-title">Insurance Impact</div>
+                            <p style="color:#d6d6d6;line-height:1.6;">${phenomenon.insurance_impact}</p>
+                           </div>`
+                        : '';
+
                     const additionalInfoHtml = phenomenon.additional_information && phenomenon.additional_information.length > 0
                         ? `<div class="phenomenon-section">
                             <div class="phenomenon-section-title">Additional Information</div>
@@ -2663,6 +2677,8 @@
                         <p class="phenomenon-summary">${phenomenon.summary || ''}</p>
                         ${backgroundHtml}
                         ${impactHtml}
+                        ${emergingRisksHtml}
+                        ${insuranceImpactHtml}
                         ${additionalInfoHtml}
                     `;
 

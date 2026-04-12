@@ -212,7 +212,9 @@ For each phenomenon, provide:
 6. **Background**: 1-2 sentences outlining the phenomenon's history, relevance, and current state.
 7. **Impact**: 1-2 sentences describing the phenomenon's potential impacts with prominent case examples.
 8. **Additional Information**: 1-3 additional source references (statistics, news articles, journal articles, product releases, or opinion pieces) that provide further context. Each entry should include the article title, the source URL, and a brief description of what the source covers. Format each entry as: "Article Title (URL): description".
-9. **Source Confidence**: Assess the overall quality of sources backing this phenomenon. Return "High" (backed by multiple tier-1 sources such as Reuters, BBC, peer-reviewed journals, WEF, OECD), "Medium" (supported by a credible mix of sources), or "Low" (primarily weaker sources, single references, or speculation-heavy content).
+9. **Emerging Risks**: 2-3 sentences identifying potential risks that could emerge from this phenomenon over the coming years — risks that are not yet fully formed but that this phenomenon could give rise to.
+10. **Insurance Impact**: 2-3 sentences explaining the specific implications of this phenomenon for insurance brokers and their clients — covering which lines of coverage are most affected, potential claims exposure, and any client advisory actions brokers should consider.
+11. **Source Confidence**: Assess the overall quality of sources backing this phenomenon. Return "High" (backed by multiple tier-1 sources such as Reuters, BBC, peer-reviewed journals, WEF, OECD), "Medium" (supported by a credible mix of sources), or "Low" (primarily weaker sources, single references, or speculation-heavy content).
 
 Format your response as a JSON array like this:
 [
@@ -225,6 +227,8 @@ Format your response as a JSON array like this:
     "background": "History, relevance, and current state here...",
     "impact": "Potential impacts with case examples here...",
     "additional_information": ["Article Title (https://example.com/article): description of what it covers", "Another Article (https://example.com/article2): description"],
+    "emerging_risks": "2-3 sentences on potential risks that could emerge from this phenomenon over the coming years...",
+    "insurance_impact": "2-3 sentences on implications for insurance brokers and their clients, covering affected lines of coverage, claims exposure, and advisory actions...",
     "source_confidence": "High"
   }}
 ]
